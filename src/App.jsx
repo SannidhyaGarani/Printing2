@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { CommandPalette } from './components/layout/CommandPalette'
-import { CursorGlow } from './components/layout/CursorGlow'
-import { FloatingActions } from './components/layout/FloatingActions'
-import { Footer } from './components/layout/Footer'
-import { Navbar } from './components/layout/Navbar'
+import { CommandPalette } from './Components/layout/CommandPalette'
+import { CursorGlow } from './Components/layout/CursorGlow'
+import { FloatingActions } from './Components/layout/FloatingActions'
+import { Footer } from './Components/layout/Footer'
+import { Navbar } from './Components/layout/Navbar'
 import { useLenis } from './hooks/useLenis'
 import { useScrollProgress } from './hooks/useScrollProgress'
 import { HomePage } from './pages/HomePage'
@@ -30,7 +30,7 @@ import { AccountPage } from './pages/AccountPage'
 import { AdminApp } from './admin/AdminApp'
 
 import { AuthProvider } from './context/AuthContext'
-import { AuthModal } from './components/auth/AuthModal'
+import { AuthModal } from './Components/auth/AuthModal'
 
 function AppContent() {
   const [darkMode, setDarkMode] = useState(false)

@@ -1,13 +1,13 @@
-import { Hero } from '../components/sections/Hero'
-import { CategoryNav } from '../components/sections/CategoryNav'
-import { ShopByCategory } from '../components/sections/ShopByCategory'
-import { Industries } from '../components/sections/Industries'
-import { WhyChooseUs } from '../components/sections/WhyChooseUs'
-import { HowItWorks } from '../components/sections/HowItWorks'
-import { StatsBanner } from '../components/sections/StatsBanner'
-import { DiscountCTA } from '../components/sections/DiscountCTA'
-import { Testimonials } from '../components/sections/Testimonials'
-import { LatestBlog } from '../components/sections/LatestBlog'
+import { Hero } from '../Components/sections/Hero'
+import { CategoryNav } from '../Components/sections/CategoryNav'
+import { ShopByCategory } from '../Components/sections/ShopByCategory'
+import { Industries } from '../Components/sections/Industries'
+import { WhyChooseUs } from '../Components/sections/WhyChooseUs'
+import { HowItWorks } from '../Components/sections/HowItWorks'
+import { StatsBanner } from '../Components/sections/StatsBanner'
+import { DiscountCTA } from '../Components/sections/DiscountCTA'
+import { Testimonials } from '../Components/sections/Testimonials'
+import { LatestBlog } from '../Components/sections/LatestBlog'
 
 export function HomePage({ setCurrentPage }) {
   return (
