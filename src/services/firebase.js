@@ -705,18 +705,60 @@ export const DEFAULT_MEGAMENU_CATEGORIES = [
     ]
   },
   {
+    id: 'apparel',
+    title: 'Apparel',
+    badge: 'NEW',
+    categoryQuery: 'Apparel',
+    iconName: 'FiShoppingBag',
+    items: [
+      { name: 'T-Shirts', search: 'T-Shirts', tag: 'Round Neck Cotton' },
+      { name: 'Polo T-Shirts', search: 'Polo T-Shirts', tag: 'Corporate Collared' },
+      { name: 'Hoodies', search: 'Hoodies', tag: 'Winter Fleeced' },
+      { name: 'Caps & Hats', search: 'Caps & Hats', tag: 'Embroidered Branding' },
+      { name: 'Custom Sweatshirts', search: 'Sweatshirts', tag: 'Casual Premium' }
+    ]
+  },
+  {
+    id: 'gifts',
+    title: 'Gifts',
+    badge: 'POPULAR',
+    categoryQuery: 'Gifts',
+    iconName: 'FiGift',
+    items: [
+      { name: 'Mugs', search: 'Mugs', tag: 'Ceramic Magic Mugs' },
+      { name: 'Keychains & Accessories', search: 'Keychains', tag: 'Metal & Acrylic' },
+      { name: 'Frames & Lamps', search: 'Frames & Lamps', tag: 'LED Acrylic Light' },
+      { name: 'Rakhi 2026', search: 'Rakhi 2026', tag: 'Festive Special' },
+      { name: 'Photo Books', search: 'Photo Books', tag: 'Hardcover Albums' },
+      { name: 'Personalised Gifts', search: 'Personalised Gifts', tag: 'Custom Keepsakes' }
+    ]
+  },
+  {
     id: 'invitations',
     title: 'Invitations',
-    badge: 'POPULAR',
+    badge: null,
     categoryQuery: 'Invitations',
     iconName: 'FiMail',
     items: [
       { name: 'Wedding Cards', search: 'Wedding Cards', tag: 'Traditional & Foil' },
       { name: 'Birthday Cards', search: 'Birthday Cards', tag: 'Vibrant & Themed' },
       { name: 'Thank You Cards', search: 'Thank You Cards', tag: 'Personalized Notes' },
-      { name: 'Save the Date Cards', search: 'Save the Date', tag: 'Announcements' },
-      { name: 'Luxury Foil Invitations', search: 'Foil Invitations', tag: 'Metallic Detailing' },
-      { name: 'Envelope & Seal Sets', search: 'Envelopes', tag: 'Custom Wax Seals' },
+      { name: 'Save the Date', search: 'Save the Date', tag: 'Announcements' },
+      { name: 'Envelope & Seal Sets', search: 'Envelopes', tag: 'Custom Wax Seals' }
+    ]
+  },
+  {
+    id: 'corporate-gifting',
+    title: 'Corporate Gifting',
+    badge: 'TRENDING',
+    categoryQuery: 'Corporate Gifting',
+    iconName: 'FiBriefcase',
+    items: [
+      { name: 'ID Cards & Lanyards', search: 'ID Cards', tag: 'PVC Badges & Satin' },
+      { name: 'Desk Calendars & Diaries', search: 'Calendars', tag: '365 Day Branding' },
+      { name: 'Executive Box Kits', search: 'Gift Kits', tag: 'Corporate Sets' },
+      { name: 'Rubber Stamps & Seals', search: 'Stamps', tag: 'Self-Inking Laser' },
+      { name: 'Corporate Drinkware', search: 'Drinkware', tag: 'Stainless Bottles' }
     ]
   },
   {
@@ -726,42 +768,13 @@ export const DEFAULT_MEGAMENU_CATEGORIES = [
     categoryQuery: 'Printing',
     iconName: 'FiPrinter',
     items: [
-      { name: 'Brochures & Flyers', search: 'Brochures & Flyers', tag: 'Tri-fold & Bi-fold' },
-      { name: 'Banners & Standees', search: 'Banners & Standees', tag: 'Indoor & Outdoor' },
-      { name: 'Stickers & Labels', search: 'Stickers & Labels', tag: 'Waterproof Die-Cut' },
-      { name: 'Letterheads & Stationery', search: 'Letterheads & Stationery', tag: 'Executive Papers' },
-      { name: 'Posters & Wall Art', search: 'Posters', tag: 'Gallery Art Prints' },
+      { name: 'Brochures & Flyers', search: 'Brochures & Flyers', tag: 'Tri-fold & Pamphlets' },
+      { name: 'Banners & Standees', search: 'Banners & Standees', tag: 'Flex & Roll-Up' },
+      { name: 'Stickers & Labels', search: 'Stickers & Labels', tag: 'Waterproof Vinyl' },
+      { name: 'Bill Books & NCR', search: 'Bill Books', tag: 'Carbonless Invoice' },
+      { name: 'Letterheads & Stationery', search: 'Letterheads', tag: 'Executive Papers' },
       { name: 'Booklets & Catalogs', search: 'Booklets', tag: 'Saddle Stitch / Bound' },
-    ]
-  },
-  {
-    id: 'packaging',
-    title: 'Packaging & Boxes',
-    badge: 'NEW',
-    categoryQuery: 'Packaging',
-    iconName: 'FiPackage',
-    items: [
-      { name: 'Custom Product Boxes', search: 'Product Boxes', tag: 'Retail & Folding' },
-      { name: 'Rigid Gift Boxes', search: 'Rigid Gift Boxes', tag: 'Magnetic Closure' },
-      { name: 'Mailer Boxes & Shipping', search: 'Mailer Boxes', tag: 'Corrugated Heavy' },
-      { name: 'Paper Bags & Pouches', search: 'Paper Bags', tag: 'Kraft & Satin Handles' },
-      { name: 'Custom Printed Tapes', search: 'Printed Tape', tag: 'Branded Shipping' },
-      { name: 'Product Hang Tags', search: 'Hang Tags', tag: 'Garment & Retail' },
-    ]
-  },
-  {
-    id: 'corporate',
-    title: 'Corporate & Merch',
-    badge: 'TRENDING',
-    categoryQuery: 'Corporate & Merch',
-    iconName: 'FiBriefcase',
-    items: [
-      { name: 'Custom T-Shirts & Polos', search: 'T-Shirts', tag: 'Embroidery & Print' },
-      { name: 'Custom Mugs & Drinkware', search: 'Mugs', tag: 'Ceramic & Tumblers' },
-      { name: 'ID Cards & Lanyards', search: 'ID Cards', tag: 'PVC Badges & Satin' },
-      { name: 'Corporate Gift Kits', search: 'Gift Kits', tag: 'Executive Box Sets' },
-      { name: 'Desk Calendars & Diaries', search: 'Calendars', tag: '365 Day Branding' },
-      { name: 'Rubber Stamps & Seals', search: 'Stamps', tag: 'Self-Inking Laser' },
+      { name: 'Custom Packaging & Boxes', search: 'Packaging', tag: 'Product Cartons' }
     ]
   }
 ];

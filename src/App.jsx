@@ -62,19 +62,14 @@ function AppContent() {
         url.pathname = '/';
       }
 
+      // Reset search params to only include 'page' and explicit extraParams
+      url.search = '';
       url.searchParams.set('page', page);
-
-      // Clean up sku query param if not explicitly passed in extraParams
-      if (!extraParams.sku) {
-        url.searchParams.delete('sku');
-      }
 
       // Update additional query params if provided
       Object.entries(extraParams).forEach(([k, v]) => {
         if (v !== undefined && v !== null && v !== '') {
           url.searchParams.set(k, v);
-        } else {
-          url.searchParams.delete(k);
         }
       });
 
@@ -86,10 +81,12 @@ function AppContent() {
       }
 
       window.history.pushState(null, '', url.toString());
+      window.dispatchEvent(new Event('popstate'));
+      window.dispatchEvent(new Event('urlchange'));
     } catch (e) {}
   };
 
-  // Sync state on browser back/forward buttons (popstate & hashchange)
+  // Sync state on browser back/forward buttons (popstate, urlchange & hashchange)
   useEffect(() => {
     const handleUrlChange = () => {
       const page = getPageFromUrl();
@@ -108,9 +105,11 @@ function AppContent() {
     };
 
     window.addEventListener('popstate', handleUrlChange);
+    window.addEventListener('urlchange', handleUrlChange);
     window.addEventListener('hashchange', handleUrlChange);
     return () => {
       window.removeEventListener('popstate', handleUrlChange);
+      window.removeEventListener('urlchange', handleUrlChange);
       window.removeEventListener('hashchange', handleUrlChange);
     };
   }, []);
@@ -149,84 +148,115 @@ function AppContent() {
   }, [])
 
   if (currentPage === 'admin') {
-    return <AdminApp onSwitchToWebsite={() => setCurrentPage('home')} />
-  }
-
-  // Page switcher renderer helper
-  const renderCurrentPage = () => {
-    switch (currentPage) {
-      case 'home':
-        return <HomePage setCurrentPage={setCurrentPage} />
-      case 'products':
-        return <ProductsPage onNavigateCart={() => setCurrentPage('cart')} setCurrentPage={setCurrentPage} />
-      case 'services':
-        return <ServicesPage />
-      case 'templates':
-        return <TemplatesPage />
-      case 'about':
-        return <AboutPage />
-      case 'contact':
-        return <ContactPage />
-      case 'track':
-        return <TrackOrderPage />
-      case 'help':
-        return <HelpCenterPage />
-      case 'blog':
-        return <BlogPage />
-      case 'cart':
-        return <CartPage setCurrentPage={setCurrentPage} />
-      case 'checkout':
-        return <CheckoutPage setCurrentPage={setCurrentPage} />
-      case 'order-success':
-        return <OrderSuccessPage setCurrentPage={setCurrentPage} />
-      case 'orders':
-        return <OrdersPage setCurrentPage={setCurrentPage} />
-      case 'order-details':
-        return <OrderDetailsPage setCurrentPage={setCurrentPage} />
-      case 'quote':
-        return <CustomQuotePage />
-      case 'login':
-        return <LoginPage setCurrentPage={setCurrentPage} />
-      case 'signup':
-        return <SignupPage setCurrentPage={setCurrentPage} />
-      case 'account':
-        return <AccountPage setCurrentPage={setCurrentPage} />
-      default:
-        return <HomePage setCurrentPage={setCurrentPage} />
-    }
+    return <AdminApp />
   }
 
   return (
-    <div className="min-h-screen bg-white text-slate-900 antialiased">
-      {/* Scroll progress indicator */}
-      <div className="fixed inset-x-0 top-0 z-[100] h-[3px] bg-slate-200/50">
-        <motion.div
-          className="h-full origin-left bg-gradient-to-r from-[#D946EF] via-[#C026D3] to-[#E11D48]"
-          animate={{ scaleX: progress / 100 }}
-          transition={{ type: 'spring', stiffness: 120, damping: 25 }}
-        />
-      </div>
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors duration-300 relative selection:bg-purple-500 selection:text-white">
+      {/* Top Scroll Progress Indicator */}
+      <motion.div
+        className="fixed top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-purple-500 via-pink-500 to-[#FF5A1F] z-50 transform-gpu origin-left"
+        style={{ scaleX: progress }}
+      />
+
       <CursorGlow />
-      <Navbar
-        currentPage={currentPage}
+
+      <Navbar currentPage={currentPage} setCurrentPage={setCurrentPage} />
+
+      <main className="flex-1">
+        {currentPage === 'home' && <HomePage setCurrentPage={setCurrentPage} />}
+        {currentPage === 'products' && (
+          <ProductsPage
+            onNavigateCart={() => setCurrentPage('cart')}
+            setCurrentPage={setCurrentPage}
+          />
+        )}
+        {currentPage === 'services' && <ServicesPage setCurrentPage={setCurrentPage} />}
+        {currentPage === 'templates' && <TemplatesPage setCurrentPage={setCurrentPage} />}
+        {currentPage === 'about' && <AboutPage setCurrentPage={setCurrentPage} />}
+        {currentPage === 'contact' && <ContactPage setCurrentPage={setCurrentPage} />}
+        {currentPage === 'track' && <TrackOrderPage setCurrentPage={setCurrentPage} />}
+        {currentPage === 'help' && <HelpCenterPage setCurrentPage={setCurrentPage} />}
+        {currentPage === 'blog' && <BlogPage setCurrentPage={setCurrentPage} />}
+        {currentPage === 'cart' && (
+          <CartPage
+            onNavigateCheckout={() => setCurrentPage('checkout')}
+            onNavigateProducts={() => setCurrentPage('products')}
+            setCurrentPage={setCurrentPage}
+          />
+        )}
+        {currentPage === 'checkout' && (
+          <CheckoutPage
+            onSuccess={() => setCurrentPage('order-success')}
+            onNavigateCart={() => setCurrentPage('cart')}
+          />
+        )}
+        {currentPage === 'order-success' && (
+          <OrderSuccessPage
+            onNavigateHome={() => setCurrentPage('home')}
+            onNavigateOrders={() => setCurrentPage('orders')}
+          />
+        )}
+        {currentPage === 'orders' && (
+          <OrdersPage
+            onNavigateHome={() => setCurrentPage('home')}
+            onNavigateDetails={(orderId) => setCurrentPage('order-details', { id: orderId })}
+          />
+        )}
+        {currentPage === 'order-details' && (
+          <OrderDetailsPage
+            onBack={() => setCurrentPage('orders')}
+          />
+        )}
+        {currentPage === 'quote' && (
+          <CustomQuotePage
+            onNavigateHome={() => setCurrentPage('home')}
+          />
+        )}
+        {currentPage === 'login' && (
+          <LoginPage
+            onNavigateSignup={() => setCurrentPage('signup')}
+            onSuccess={() => setCurrentPage('home')}
+          />
+        )}
+        {currentPage === 'signup' && (
+          <SignupPage
+            onNavigateLogin={() => setCurrentPage('login')}
+            onSuccess={() => setCurrentPage('home')}
+          />
+        )}
+        {currentPage === 'account' && (
+          <AccountPage
+            onNavigateOrders={() => setCurrentPage('orders')}
+          />
+        )}
+      </main>
+
+      <Footer setCurrentPage={setCurrentPage} />
+
+      <FloatingActions
+        darkMode={darkMode}
+        setDarkMode={setDarkMode}
+        setCommandOpen={setCommandOpen}
+      />
+
+      <CommandPalette
+        isOpen={commandOpen}
+        onClose={() => setCommandOpen(false)}
         setCurrentPage={setCurrentPage}
       />
-      
-      {/* Switcher Main */}
-      {renderCurrentPage()}
-      
-      <Footer setCurrentPage={setCurrentPage} />
-      <FloatingActions />
-      <CommandPalette open={commandOpen} onClose={() => setCommandOpen(false)} />
+
       <AuthModal />
     </div>
   )
 }
 
-export default function App() {
+export function App() {
   return (
     <AuthProvider>
       <AppContent />
     </AuthProvider>
   )
 }
+
+export default App

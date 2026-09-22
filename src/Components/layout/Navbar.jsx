@@ -5,11 +5,7 @@ import {
   FiShoppingBag,
   FiUser,
   FiChevronDown,
-  FiTruck,
-  FiHeart,
   FiSearch,
-  FiCheckCircle,
-  FiShield,
   FiArrowRight,
 } from 'react-icons/fi'
 import { useAuth } from '../../context/AuthContext'
@@ -17,11 +13,12 @@ import { SearchModal } from '../common/SearchModal'
 import { subscribeToMegamenuCategories, DEFAULT_MEGAMENU_CATEGORIES } from '../../services/firebase'
 
 export function Navbar({ currentPage, setCurrentPage }) {
-  const { cartItems, wishlistItems } = useAuth()
+  const { cartItems } = useAuth()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [liveMegamenuCats, setLiveMegamenuCats] = useState(DEFAULT_MEGAMENU_CATEGORIES)
+  const [openMobileSubcat, setOpenMobileSubcat] = useState(null)
 
   useEffect(() => {
     const unsubscribe = subscribeToMegamenuCategories((cats) => {
@@ -47,16 +44,39 @@ export function Navbar({ currentPage, setCurrentPage }) {
     setMobileMenuOpen(false)
   }
 
+  // Target 6 Categories in specific order required
+  const targetCategories = [
+    'Business Cards',
+    'Apparel',
+    'Gifts',
+    'Invitations',
+    'Corporate Gifting',
+    'Printing'
+  ]
+
+  // Get matching category object from live data or fallback defaults
+  const getCategoryData = (catName) => {
+    const found = liveMegamenuCats.find(
+      (c) => (c.title || c.categoryQuery || '').toLowerCase() === catName.toLowerCase()
+    )
+    if (found) return found;
+
+    const defaultFound = DEFAULT_MEGAMENU_CATEGORIES.find(
+      (c) => (c.title || c.categoryQuery || '').toLowerCase() === catName.toLowerCase()
+    )
+    return defaultFound || { title: catName, categoryQuery: catName, items: [] }
+  }
+
   return (
     <header className="w-full font-sans sticky top-0 z-50 transition-all duration-300">
 
-      {/* Main White Header (Matching Screenshot 2) */}
+      {/* Main Single White Header */}
       <div className={`bg-white transition-all duration-300 border-b ${
         isScrolled ? 'py-3 shadow-md border-slate-200' : 'py-4 border-[#E2E8F0]'
       }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4 sm:gap-6">
 
-          {/* Visual BLINK Brand Logo (Matching Screenshot 2) */}
+          {/* Brand Logo */}
           <button
             onClick={() => handleLinkClick('home')}
             className="flex flex-col text-left border-none bg-transparent cursor-pointer flex-shrink-0 group"
@@ -74,82 +94,44 @@ export function Navbar({ currentPage, setCurrentPage }) {
             </span>
           </button>
 
-          {/* Navigation Links */}
-          <nav className="hidden md:flex items-center gap-7">
-            <button
-              onClick={() => handleLinkClick('home')}
-              className={`relative py-1 text-[14.5px] font-extrabold transition-colors border-none bg-transparent cursor-pointer ${
-                currentPage === 'home' ? 'text-[#C026D3]' : 'text-[#0F172A] hover:text-[#C026D3]'
-              }`}
-            >
-              Home
-              {currentPage === 'home' && (
-                <span className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-gradient-to-r from-[#D946EF] to-[#E11D48] rounded-full" />
-              )}
-            </button>
+          {/* Navigation Links: Exactly 6 Categories with Dropdowns */}
+          <nav className="hidden lg:flex items-center gap-5 xl:gap-7">
+            {targetCategories.map((catName) => {
+              const catData = getCategoryData(catName);
+              const subItems = catData.items || [];
 
-            {/* Products Megamenu Trigger */}
-            <div className="relative group">
-              <button
-                onClick={() => handleLinkClick('products')}
-                className={`flex items-center gap-1 py-1 text-[14.5px] font-extrabold transition-colors border-none bg-transparent cursor-pointer ${
-                  currentPage === 'products' ? 'text-[#C026D3]' : 'text-[#0F172A] group-hover:text-[#C026D3]'
-                }`}
-              >
-                <span>Products</span>
-                <FiChevronDown className="w-4 h-4 text-slate-400 group-hover:text-[#C026D3] transition-transform group-hover:rotate-180" />
-              </button>
+              return (
+                <div key={catName} className="relative group">
+                  <button
+                    onClick={() => handleLinkClick('products', { category: catData.categoryQuery || catName }, '#catalog')}
+                    className="flex items-center gap-1 py-1 text-[14px] xl:text-[14.5px] font-extrabold text-[#0F172A] group-hover:text-[#C026D3] transition-colors border-none bg-transparent cursor-pointer whitespace-nowrap"
+                  >
+                    <span>{catName}</span>
+                    <FiChevronDown className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#C026D3] transition-transform group-hover:rotate-180" />
+                  </button>
 
-              <div className="absolute top-full left-0 pt-2 w-[720px] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                <div className="bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 grid grid-cols-4 gap-4">
-                  {liveMegamenuCats.slice(0, 4).map((cat) => (
-                    <div key={cat.title} className="flex flex-col text-left">
-                      <h4 className="text-[14px] font-black text-[#0F172A] mb-2 pb-1 border-b border-slate-100">
-                        {cat.title}
-                      </h4>
-                      <div className="space-y-1">
-                        {(cat.items || []).map((item) => (
+                  {/* Dropdown Menu on Hover */}
+                  {subItems.length > 0 && (
+                    <div className="absolute top-full left-0 pt-2 w-60 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                      <div className="bg-white border border-slate-200 rounded-2xl shadow-xl p-3 space-y-1">
+                        <div className="text-[10px] font-black text-[#C026D3] uppercase tracking-wider px-2 py-1 border-b border-slate-100 mb-1">
+                          {catName}
+                        </div>
+                        {subItems.map((sub) => (
                           <button
-                            key={item.name}
-                            onClick={() => handleLinkClick('products', { category: cat.categoryQuery || cat.title, search: item.name }, '#catalog')}
-                            className="block w-full text-left text-[14px] font-semibold text-slate-600 hover:text-[#C026D3] py-1 border-none bg-transparent cursor-pointer transition-colors"
+                            key={sub.name}
+                            onClick={() => handleLinkClick('products', { category: catData.categoryQuery || catName, search: sub.name }, '#catalog')}
+                            className="block w-full text-left px-2.5 py-1.5 text-[13px] font-bold text-slate-700 hover:text-[#C026D3] hover:bg-pink-50/60 rounded-xl transition-colors border-none bg-transparent cursor-pointer"
                           >
-                            {item.name}
+                            {sub.name}
                           </button>
                         ))}
                       </div>
                     </div>
-                  ))}
+                  )}
                 </div>
-              </div>
-            </div>
-
-            <button
-              onClick={() => handleLinkClick('services')}
-              className={`py-1 text-[14.5px] font-extrabold transition-colors border-none bg-transparent cursor-pointer ${
-                currentPage === 'services' ? 'text-[#C026D3]' : 'text-[#0F172A] hover:text-[#C026D3]'
-              }`}
-            >
-              Services
-            </button>
-
-            <button
-              onClick={() => handleLinkClick('about')}
-              className={`py-1 text-[14.5px] font-extrabold transition-colors border-none bg-transparent cursor-pointer ${
-                currentPage === 'about' ? 'text-[#C026D3]' : 'text-[#0F172A] hover:text-[#C026D3]'
-              }`}
-            >
-              About
-            </button>
-
-            <button
-              onClick={() => handleLinkClick('contact')}
-              className={`py-1 text-[14.5px] font-extrabold transition-colors border-none bg-transparent cursor-pointer ${
-                currentPage === 'contact' ? 'text-[#C026D3]' : 'text-[#0F172A] hover:text-[#C026D3]'
-              }`}
-            >
-              Contact
-            </button>
+              );
+            })}
           </nav>
 
           {/* Right Actions: Search Icon + Get Quote Gradient Button + Cart/User */}
@@ -164,7 +146,7 @@ export function Navbar({ currentPage, setCurrentPage }) {
               <FiSearch className="w-5 h-5" />
             </button>
 
-            {/* Get Quote Pill Button (Matching Screenshot 2) */}
+            {/* Get Quote Button */}
             <button
               onClick={() => handleLinkClick('quote')}
               className="btn-gradient inline-flex items-center gap-2 font-bold text-[13.5px] sm:text-[14px] px-5 sm:px-6 py-2.5 rounded-full shadow-sm cursor-pointer border-none group"
@@ -199,7 +181,7 @@ export function Navbar({ currentPage, setCurrentPage }) {
             {/* Mobile Menu Toggle */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 text-[#0F172A] cursor-pointer rounded-lg hover:bg-slate-100 transition-colors border-none bg-transparent"
+              className="lg:hidden p-2 text-[#0F172A] cursor-pointer rounded-lg hover:bg-slate-100 transition-colors border-none bg-transparent"
             >
               {mobileMenuOpen ? <FiX className="w-6 h-6" /> : <FiMenu className="w-6 h-6" />}
             </button>
@@ -210,7 +192,7 @@ export function Navbar({ currentPage, setCurrentPage }) {
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-white border-b border-slate-200 shadow-xl px-4 py-4 space-y-2 z-40">
+        <div className="lg:hidden bg-white border-b border-slate-200 shadow-xl px-4 py-4 space-y-2 z-40 max-h-[80vh] overflow-y-auto">
           <div
             onClick={() => {
               setMobileMenuOpen(false)
@@ -227,27 +209,49 @@ export function Navbar({ currentPage, setCurrentPage }) {
             />
           </div>
 
-          {[
-            { label: 'Home', page: 'home' },
-            { label: 'Products Catalog', page: 'products' },
-            { label: 'Services', page: 'services' },
-            { label: 'About Us', page: 'about' },
-            { label: 'Contact', page: 'contact' },
-            { label: 'Get Custom Quote', page: 'quote' },
-            { label: 'My Cart', page: 'cart' },
-            { label: 'My Account', page: 'account' },
-            { label: 'Admin Panel', page: 'admin' },
-          ].map(({ label, page }) => (
-            <button
-              key={page}
-              onClick={() => handleLinkClick(page)}
-              className={`block w-full text-left px-3 py-2.5 text-[14px] font-bold rounded-xl transition-colors border-none cursor-pointer ${
-                currentPage === page ? 'text-[#C026D3] bg-pink-50' : 'text-[#0F172A] bg-transparent hover:bg-slate-50'
-              }`}
-            >
-              {label}
-            </button>
-          ))}
+          <div className="text-[11px] font-black uppercase text-[#C026D3] tracking-wider pb-1">
+            Categories
+          </div>
+
+          {targetCategories.map((catName) => {
+            const catData = getCategoryData(catName);
+            const subItems = catData.items || [];
+            const isOpen = openMobileSubcat === catName;
+
+            return (
+              <div key={catName} className="space-y-1">
+                <button
+                  onClick={() => {
+                    if (subItems.length > 0) {
+                      setOpenMobileSubcat(isOpen ? null : catName);
+                    } else {
+                      handleLinkClick('products', { category: catData.categoryQuery || catName }, '#catalog');
+                    }
+                  }}
+                  className="w-full text-left px-3 py-2 text-[14px] font-extrabold text-[#0F172A] hover:bg-slate-50 rounded-xl flex items-center justify-between border-none bg-transparent cursor-pointer"
+                >
+                  <span>{catName}</span>
+                  {subItems.length > 0 && (
+                    <FiChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                  )}
+                </button>
+
+                {isOpen && subItems.length > 0 && (
+                  <div className="pl-4 space-y-1 border-l-2 border-pink-200 ml-3 py-1">
+                    {subItems.map((sub) => (
+                      <button
+                        key={sub.name}
+                        onClick={() => handleLinkClick('products', { category: catData.categoryQuery || catName, search: sub.name }, '#catalog')}
+                        className="block w-full text-left px-3 py-1.5 text-[13px] font-bold text-slate-600 hover:text-[#C026D3] border-none bg-transparent cursor-pointer"
+                      >
+                        {sub.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -266,4 +270,3 @@ export function Navbar({ currentPage, setCurrentPage }) {
     </header>
   )
 }
-

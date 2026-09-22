@@ -13,29 +13,30 @@ import {
   FiStar,
   FiChevronDown,
   FiChevronUp,
-  FiInfo
+  FiInfo,
+  FiShare2,
+  FiZoomIn
 } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
 import { DEFAULT_CATALOG_OPTIONS } from '../services/firebase';
 import { ArtworkUploadModal } from '../Components/cart/ArtworkUploadModal';
+import { GoogleReviewsSection } from '../Components/sections/GoogleReviewsSection';
 
-// Helper to convert camelCase keys like 'boxStyle' -> 'Box Style'
+// Helper to convert camelCase keys like 'paperStock' -> 'Paper Stock'
 const formatKeyToTitle = (key) => {
   const titles = {
-    paperStock: 'Paper Stock & Board Weight',
-    finishes: 'Special Finishes & Finishing Effects',
-    sides: 'Print Sides Option',
-    corners: 'Edge Cutting & Corner Finishing',
-    sizeFormat: 'Card Size & Aspect Ratio Format',
-    lamination: 'Lamination Option & Protective Coating',
-    foilAccents: 'Metallic Foil Accents & Hot Stamping',
-    spotUV: 'Spot UV & Selective Gloss Textures',
-    bindingStyle: 'Binding & Booklet Construction',
-    proofService: 'Prepress File Check & Proofing Service',
-    packagingStyle: 'Packaging & Presentation Box',
-    baseType: 'Base & Frame Specification',
-    boxStyle: 'Box Construction & Style',
-    customAreaPricing: 'Custom Area Pricing & Dimensions (Height × Width in sq. feet)',
+    paperStock: 'Paper Stock & Weight',
+    finishes: 'Special Finishes',
+    sides: 'Print Sides',
+    corners: 'Edge Cutting',
+    sizeFormat: 'Card Size & Format',
+    lamination: 'Lamination Finish',
+    foilAccents: 'Metallic Foil Accents',
+    spotUV: 'Spot UV Texture',
+    bindingStyle: 'Binding Style',
+    proofService: 'Proofing Service',
+    packagingStyle: 'Packaging Option',
+    customAreaPricing: 'Dimensions (Height × Width in sq. ft)',
   };
   if (titles[key]) return titles[key];
   return key
@@ -43,7 +44,22 @@ const formatKeyToTitle = (key) => {
     .replace(/^./, (str) => str.toUpperCase());
 };
 
-export function ProductDetailPage({ product, onBack, onNavigateCart }) {
+// Helper for option subtitles matching reference screenshots (e.g. Single sided -> Front only)
+const getOptionSubtitle = (val, optObj) => {
+  if (optObj && typeof optObj === 'object' && optObj.subtitle) return optObj.subtitle;
+  if (typeof val !== 'string') return '';
+  const lower = val.toLowerCase();
+  if (lower.includes('single')) return 'Front only';
+  if (lower.includes('double') || lower.includes('both')) return 'Front & Back';
+  if (lower.includes('standard') || lower.includes('regular') || lower.includes('square')) return 'Included';
+  if (lower.includes('round')) return '+₹0.3';
+  if (lower.includes('gloss')) return 'Vibrant Shine';
+  if (lower.includes('matt')) return 'Smooth Non-reflective';
+  if (lower.includes('velvet')) return 'Soft Touch Premium';
+  return '';
+};
+
+export function ProductDetailPage({ product, onBack, onNavigateCart, allProducts = [], onSelectProduct }) {
   const { addToCart, toggleWishlist, isInWishlist } = useAuth();
 
   const imagesList = product.images && product.images.length > 0 
@@ -60,25 +76,30 @@ export function ProductDetailPage({ product, onBack, onNavigateCart }) {
     }
   }, [product]);
 
-  // Minimum Order Quantity (Min Pieces) from product or default 1
-  const minPieces = product.minOrderQty || 1;
+  // Minimum Order Quantity from product or default 100
+  const minPieces = product.minOrderQty || 100;
 
-  const [isCustomQty, setIsCustomQty] = useState(true);
+  const [isCustomQty, setIsCustomQty] = useState(false);
   const [customQtyInput, setCustomQtyInput] = useState(minPieces);
   const [quantity, setQuantity] = useState(minPieces);
 
-  // Accordion Tabs Toggle (description open by default)
-  const [openAccordion, setOpenAccordion] = useState('description'); // 'overview', 'shipping', 'guarantee'
+  // Design Notes state
+  const [designNotes, setDesignNotes] = useState('');
+  const [uploadedFrontFile, setUploadedFrontFile] = useState(null);
+  const [uploadedBackFile, setUploadedBackFile] = useState(null);
 
-  // Custom Height & Width Area Calculation States (cm)
-  const [customHeight, setCustomHeight] = useState('5');
-  const [customWidth, setCustomWidth] = useState('10');
+  // Accordion Tabs Toggle
+  const [openAccordion, setOpenAccordion] = useState('description');
+
+  // Custom Height & Width Area Calculation States (ft)
+  const [customHeight, setCustomHeight] = useState('2');
+  const [customWidth, setCustomWidth] = useState('3');
 
   const parsedH = parseFloat(customHeight) || 0;
   const parsedW = parseFloat(customWidth) || 0;
   const calculatedAreaSqCm = Math.round(parsedH * parsedW * 100) / 100;
 
-  // Effective variants merging product.variants with default customAreaPricing fallback
+  // Effective variants merging product.variants with catalog defaults
   const effectiveVariants = React.useMemo(() => {
     const rawVariants = product.variants || {};
     const merged = { ...rawVariants };
@@ -116,7 +137,6 @@ export function ProductDetailPage({ product, onBack, onNavigateCart }) {
     return initial;
   });
 
-  // Keep state updated if product changes
   useEffect(() => {
     const initial = {};
     Object.entries(effectiveVariants).forEach(([key, options]) => {
@@ -128,14 +148,31 @@ export function ProductDetailPage({ product, onBack, onNavigateCart }) {
     setSelectedVariants(initial);
   }, [effectiveVariants]);
 
-  const [uploadedFile, setUploadedFile] = useState(null);
   const [addedSuccess, setAddedSuccess] = useState(false);
   const [isArtworkModalOpen, setIsArtworkModalOpen] = useState(false);
   const [isBuyNowFlow, setIsBuyNowFlow] = useState(false);
 
+  // Engine States
+  const [ncrCopyType, setNcrCopyType] = useState('Duplicate');
+  const [ncrCopy1Color, setNcrCopy1Color] = useState('Pink');
+  const [ncrCopy2Color, setNcrCopy2Color] = useState('Yellow');
+  const [ncrSetsPerBook, setNcrSetsPerBook] = useState('50 Sets');
+  const [ncrSerialNoToggle, setNcrSerialNoToggle] = useState(true);
+  const [ncrStartSerialNo, setNcrStartSerialNo] = useState('1001');
+
+  const [spotUvMaskFile, setSpotUvMaskFile] = useState(null);
+  const [foilArtworkFile, setFoilArtworkFile] = useState(null);
+  const [stickerWhiteInk, setStickerWhiteInk] = useState('With White Ink');
+  const [brochureFold, setBrochureFold] = useState('Tri Fold');
+
+  const isNcrEngine = product.enableNcrEngine || (product.category && product.category.toLowerCase().includes('bill')) || (product.category && product.category.toLowerCase().includes('book'));
+  const isVisitingCardEngine = product.enableVisitingCardEngine || (product.category && product.category.toLowerCase().includes('card'));
+  const isBrochureEngine = product.enableBrochureEngine || (product.category && product.category.toLowerCase().includes('brochure'));
+  const isStickerEngine = product.enableStickerEngine || (product.category && product.category.toLowerCase().includes('sticker'));
+
   const isSaved = isInWishlist(product.id);
 
-  // Active pricing tier lookup
+  // Active tier lookup
   const getActiveTier = () => {
     if (!product.tieredPricing || product.tieredPricing.length === 0) return null;
     const sortedTiers = [...product.tieredPricing].sort((a, b) => b.tierMin - a.tierMin);
@@ -145,17 +182,17 @@ export function ProductDetailPage({ product, onBack, onNavigateCart }) {
 
   const activeTier = getActiveTier();
 
-  // Dynamic Price Calculator based on product base price, tier, and selected variant modifiers
+  // Price Calculation
   const calculatePrice = () => {
     const validQty = Math.max(1, quantity || minPieces);
-    let baseUnitPrice = product.basePrice || product.price || 0;
+    let baseUnitPrice = product.basePrice || product.price || 5.0;
     if (activeTier) {
       baseUnitPrice = activeTier.pricePerUnit;
     }
 
     let totalModifiers = 0;
     Object.entries(effectiveVariants).forEach(([key, options]) => {
-      if (key === 'customAreaPricing') return; // Handled separately with Height x Width
+      if (key === 'customAreaPricing') return;
       if (Array.isArray(options) && options.length > 0) {
         const selectedVal = selectedVariants[key];
         const match = options.find(
@@ -186,44 +223,36 @@ export function ProductDetailPage({ product, onBack, onNavigateCart }) {
     }));
   };
 
-  const validateInputsBeforeModal = () => {
-    if (isCustomQty) {
-      const parsed = parseInt(customQtyInput);
-      if (!customQtyInput || isNaN(parsed) || parsed <= 0) {
-        alert(`Mandatory Custom Quantity Required!\n\nPlease enter your desired quantity (Minimum ${minPieces} pieces) before adding to cart.`);
-        const inputEl = document.getElementById('customQtyField');
-        if (inputEl) {
-          inputEl.focus();
-          inputEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-        return false;
-      }
-      if (parsed < minPieces) {
-        alert(`Minimum Order Quantity Requirement:\n\nThis product requires a minimum of ${minPieces} pieces. Please enter ${minPieces} or more.`);
-        const inputEl = document.getElementById('customQtyField');
-        if (inputEl) inputEl.focus();
-        return false;
-      }
-    }
-
-    if (quantity < minPieces) {
-      alert(`Minimum order quantity for this product is ${minPieces} pieces.`);
-      return false;
-    }
-
-    return true;
-  };
-
   const handleAddToCart = () => {
-    if (!validateInputsBeforeModal()) return;
-    setIsBuyNowFlow(false);
-    setIsArtworkModalOpen(true);
+    addToCart({
+      id: product.id,
+      name: product.title || product.name,
+      qty: quantity,
+      selectedOptions: selectedVariants,
+      paper: selectedVariants.paperStock || '',
+      finish: selectedVariants.finishes || '',
+      sides: selectedVariants.sides || '',
+      corners: selectedVariants.corners || '',
+      customHeight: parsedH > 0 ? parsedH : null,
+      customWidth: parsedW > 0 ? parsedW : null,
+      calculatedArea: calculatedAreaSqCm > 0 ? calculatedAreaSqCm : null,
+      unitPrice: unitPrice,
+      totalPrice: totalPrice,
+      image: selectedImage || (imagesList.length > 0 ? imagesList[0] : null),
+      artworkFiles: [
+        ...(uploadedFrontFile ? [uploadedFrontFile.name] : []),
+        ...(uploadedBackFile ? [uploadedBackFile.name] : [])
+      ],
+      artworkNotes: designNotes || ''
+    });
+
+    setAddedSuccess(true);
+    setTimeout(() => setAddedSuccess(false), 2000);
   };
 
   const handleBuyNow = () => {
-    if (!validateInputsBeforeModal()) return;
-    setIsBuyNowFlow(true);
-    setIsArtworkModalOpen(true);
+    handleAddToCart();
+    if (onNavigateCart) onNavigateCart();
   };
 
   const handleConfirmArtworkUpload = ({ artworkFiles, artworkNotes }) => {
@@ -232,19 +261,14 @@ export function ProductDetailPage({ product, onBack, onNavigateCart }) {
       name: product.title || product.name,
       qty: quantity,
       selectedOptions: selectedVariants,
-      paper: selectedVariants.paperStock || selectedVariants.paper || '',
-      finish: selectedVariants.finishes || selectedVariants.finish || '',
+      paper: selectedVariants.paperStock || '',
+      finish: selectedVariants.finishes || '',
       sides: selectedVariants.sides || '',
-      customHeight: parsedH > 0 ? parsedH : null,
-      customWidth: parsedW > 0 ? parsedW : null,
-      calculatedArea: calculatedAreaSqCm > 0 ? calculatedAreaSqCm : null,
-      areaTier: matchedAreaTier ? (matchedAreaTier.name || `Up to ${matchedAreaTier.maxArea} sq.ft`) : null,
-      areaPrice: matchedAreaTier ? (matchedAreaTier.priceModifier || matchedAreaTier.price || 0) : 0,
       unitPrice: unitPrice,
       totalPrice: totalPrice,
       image: selectedImage || (imagesList.length > 0 ? imagesList[0] : null),
       artworkFiles: artworkFiles || [],
-      artworkNotes: artworkNotes || ''
+      artworkNotes: artworkNotes || designNotes || ''
     });
 
     setAddedSuccess(true);
@@ -255,42 +279,58 @@ export function ProductDetailPage({ product, onBack, onNavigateCart }) {
     }
   };
 
+  // Determine starting price badge (e.g. From ₹549.00 for 300 cards)
+  const lowestQty = product.tieredPricing && product.tieredPricing.length > 0
+    ? product.tieredPricing[0].tierMin
+    : minPieces;
+  const lowestPrice = product.tieredPricing && product.tieredPricing.length > 0
+    ? Math.round(product.tieredPricing[0].tierMin * product.tieredPricing[0].pricePerUnit)
+    : Math.round(minPieces * (product.basePrice || 5));
 
-  // Step Counter tracking variable for dynamic section numbers
-  let stepCounter = 1;
+  // Resolve related products from explicit product.relatedProductIds OR fallback to same category products
+  const getRelatedProducts = () => {
+    if (!allProducts || allProducts.length === 0) return [];
+    if (product.relatedProductIds && Array.isArray(product.relatedProductIds) && product.relatedProductIds.length > 0) {
+      const explicitMatches = allProducts.filter(p => product.relatedProductIds.includes(p.id) && p.id !== product.id);
+      if (explicitMatches.length > 0) return explicitMatches;
+    }
+    return allProducts.filter(p => (p.category === product.category) && p.id !== product.id).slice(0, 4);
+  };
+
+  const relatedProductsList = getRelatedProducts();
 
   return (
-    <div className="bg-[#FAFBFD] font-sans min-h-screen text-[#0B1633] pb-20">
+    <div className="bg-white font-sans min-h-screen text-slate-900 pb-20">
       
-      {/* Top Breadcrumb & Quick Navigation Bar */}
-      <div className="bg-[#07152F] text-white py-5 px-4 sm:px-8 border-b border-slate-800/80 sticky top-0 z-30 backdrop-blur-md bg-[#07152F]/95">
-        <div className="max-w-7xl mx-auto flex flex-row items-center justify-between gap-4">
+      {/* Top Breadcrumb Header Bar */}
+      <div className="bg-slate-50 border-b border-slate-200 py-3.5 px-4 sm:px-8 sticky top-0 z-30 backdrop-blur-md bg-white/90">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
           <button
             onClick={onBack}
-            className="inline-flex items-center gap-2 text-[14px] font-bold text-slate-300 hover:text-[#FF5A1F] transition cursor-pointer bg-transparent border-none"
+            className="inline-flex items-center gap-2 text-[13.5px] font-extrabold text-slate-700 hover:text-[#EA580C] transition cursor-pointer bg-transparent border-none"
           >
-            <FiArrowLeft className="w-4 h-4 text-[#FF5A1F]" /> Back to Products Catalog
+            <FiArrowLeft className="w-4 h-4 text-[#EA580C]" /> Back to Products
           </button>
 
-          <div className="flex items-center gap-2 text-[14px] text-slate-400">
-            <span>Products</span>
+          <div className="flex items-center gap-2 text-[13px] text-slate-500 font-medium">
+            <span>Home</span>
             <span>/</span>
-            <span className="text-[#FF5A1F] font-bold">{product.category}</span>
-            <span className="hidden xs:inline">/</span>
-            <span className="text-white font-extrabold truncate max-w-[160px] hidden xs:inline">{product.title}</span>
+            <span className="text-[#EA580C] font-bold">{product.category}</span>
+            <span className="hidden sm:inline">/</span>
+            <span className="text-slate-900 font-bold truncate max-w-[200px] hidden sm:inline">{product.title}</span>
           </div>
         </div>
       </div>
 
-      {/* Main Product Details Layout */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
+      {/* Main Container */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
           
-          {/* LEFT COLUMN: STICKY IMAGE GALLERY & TECHNICAL SPECS (5 cols) */}
-          <div className="lg:col-span-5 sticky top-24 self-start space-y-5">
+          {/* LEFT COLUMN: PRODUCT IMAGES & GALLERY (5 cols) */}
+          <div className="lg:col-span-5 sticky top-20 self-start space-y-4">
             
-            {/* Main Stage Image Box */}
-            <div className="relative bg-white rounded-3xl overflow-hidden border border-[#E7EAF0] shadow-xl group h-[400px] sm:h-[460px] flex items-center justify-center">
+            {/* Stage Image Container (Matching Screenshot 1) */}
+            <div className="relative bg-[#F2F4F7] rounded-3xl overflow-hidden border border-slate-200/90 shadow-xs h-[380px] sm:h-[450px] flex items-center justify-center group">
               {selectedImage ? (
                 <img 
                   src={selectedImage} 
@@ -298,39 +338,48 @@ export function ProductDetailPage({ product, onBack, onNavigateCart }) {
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
                 />
               ) : (
-                <div className="w-full h-full bg-slate-50 flex flex-col items-center justify-center text-slate-400">
-                  <FiPackage className="w-20 h-20 text-slate-300 mb-3" />
-                  <span className="text-[14px] font-extrabold">No Image Uploaded</span>
+                <div className="w-full h-full bg-slate-100 flex flex-col items-center justify-center text-slate-400">
+                  <FiPackage className="w-16 h-16 text-slate-300 mb-2" />
+                  <span className="text-[13px] font-bold">No Image Uploaded</span>
                 </div>
               )}
 
-              {/* Wishlist Glass Heart Button */}
+              {/* Top Right Share Button */}
               <button
-                onClick={() => toggleWishlist(product)}
-                className={`absolute top-4 right-4 w-11 h-11 rounded-2xl bg-white/90 backdrop-blur-md shadow-lg flex items-center justify-center transition-all duration-200 border-none cursor-pointer hover:scale-110 ${
-                  isSaved ? 'text-rose-600' : 'text-slate-400 hover:text-rose-600'
-                }`}
-                title="Save to Wishlist"
+                type="button"
+                onClick={() => {
+                  if (navigator.share) {
+                    navigator.share({ title: product.title, url: window.location.href });
+                  } else {
+                    navigator.clipboard.writeText(window.location.href);
+                    alert('Product link copied to clipboard!');
+                  }
+                }}
+                className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/90 shadow-md flex items-center justify-center text-slate-600 hover:text-slate-900 border-none cursor-pointer transition hover:scale-110"
+                title="Share product"
               >
-                <FiHeart className={`w-5 h-5 ${isSaved ? 'fill-rose-600 text-rose-600' : ''}`} />
+                <FiShare2 className="w-4 h-4" />
               </button>
 
-              {/* Verified Press Quality Badge */}
-              <div className="absolute bottom-4 left-4 bg-[#07152F]/90 backdrop-blur-md text-white text-[14px] font-extrabold px-3 py-1.5 rounded-xl border border-white/20 flex items-center gap-1.5 shadow-md">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span>300 DPI Prepress Proofed</span>
+              {/* Bottom Right Hover to Zoom Badge (Matching Screenshot 1) */}
+              <div className="absolute bottom-4 right-4 bg-slate-900/80 backdrop-blur-xs text-white text-[11px] font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-md">
+                <FiZoomIn className="w-3.5 h-3.5 text-white" />
+                <span>Hover to zoom</span>
               </div>
             </div>
 
             {/* Thumbnail Carousel Row */}
             {imagesList.length > 1 && (
-              <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
+              <div className="flex gap-3 overflow-x-auto pb-1 custom-scrollbar">
                 {imagesList.map((img, idx) => (
                   <button
                     key={idx}
+                    type="button"
                     onClick={() => setSelectedImage(img)}
-                    className={`w-20 h-20 rounded-2xl overflow-hidden border-2 transition-all duration-200 cursor-pointer shrink-0 shadow-xs ${
-                      selectedImage === img ? 'border-[#FF5A1F] ring-2 ring-[#FF5A1F]/30 scale-105' : 'border-slate-200 opacity-70 hover:opacity-100'
+                    className={`w-20 h-20 rounded-2xl overflow-hidden border-2 transition-all cursor-pointer shrink-0 ${
+                      selectedImage === img 
+                        ? 'border-[#EA580C] ring-2 ring-[#EA580C]/20 scale-105' 
+                        : 'border-slate-200 opacity-80 hover:opacity-100'
                     }`}
                   >
                     <img src={img} alt="Thumbnail" className="w-full h-full object-cover" />
@@ -339,280 +388,68 @@ export function ProductDetailPage({ product, onBack, onNavigateCart }) {
               </div>
             )}
 
-            {/* Technical Specifications Card if available */}
-            {product.specs && Object.keys(product.specs).length > 0 && (
-              <div id="specs" className="bg-white rounded-3xl p-6 border border-[#E7EAF0] shadow-sm space-y-4 text-[14px]">
-                <h4 className="font-black text-[#0B1633] flex items-center gap-2 border-b border-slate-100 pb-3 text-sm uppercase tracking-wider">
-                  <FiFileText className="w-4 h-4 text-[#FF5A1F]" /> Technical Specs & Print Specifications
-                </h4>
-                <div className="grid grid-cols-2 gap-3 text-slate-600 font-medium">
-                  {product.specs.paperGsm && (
-                    <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                      <span className="text-[10px] text-slate-400 font-bold uppercase block">Paper Weight</span>
-                      <strong className="text-slate-900 font-extrabold text-[14px]">{product.specs.paperGsm}</strong>
-                    </div>
-                  )}
-                  {product.specs.dimensions && (
-                    <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                      <span className="text-[10px] text-slate-400 font-bold uppercase block">Dimensions</span>
-                      <strong className="text-slate-900 font-extrabold text-[14px]">{product.specs.dimensions}</strong>
-                    </div>
-                  )}
-                  {product.specs.printTech && (
-                    <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                      <span className="text-[10px] text-slate-400 font-bold uppercase block">Press Tech</span>
-                      <strong className="text-slate-900 font-extrabold text-[14px]">{product.specs.printTech}</strong>
-                    </div>
-                  )}
-                  {product.specs.turnaround && (
-                    <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                      <span className="text-[10px] text-slate-400 font-bold uppercase block">Turnaround</span>
-                      <strong className="text-slate-900 font-extrabold text-[14px]">{product.specs.turnaround}</strong>
-                    </div>
-                  )}
-                  {/* Orientation spec */}
-                  {product.orientation && (
-                    <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                      <span className="text-[10px] text-slate-400 font-bold uppercase block">Orientation</span>
-                      <strong className="text-slate-900 font-extrabold text-[14px] capitalize">{product.orientation === 'vertical' ? 'Portrait' : 'Landscape'}</strong>
-                    </div>
-                  )}
-                  {/* Paper Sizes spec */}
-                  {product.paperSizes && product.paperSizes.length > 0 && (
-                    <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                      <span className="text-[10px] text-slate-400 font-bold uppercase block">Paper Sizes</span>
-                      <strong className="text-slate-900 font-extrabold text-[14px]">{product.paperSizes.join(', ')}</strong>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Press Guarantee Badges */}
-            <div className="bg-white rounded-3xl p-5 border border-[#E7EAF0] shadow-sm grid grid-cols-3 gap-3 text-center text-[14px] font-bold text-slate-700">
-              <div className="flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-orange-50/50">
-                <FiTruck className="w-5 h-5 text-[#FF5A1F]" />
-                <span className="text-[14px] font-black text-slate-900">Express Delivery</span>
-                <span className="text-[9.5px] text-slate-500 font-medium">Pan-India Doorstep</span>
-              </div>
-              <div className="flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-emerald-50/50">
-                <FiCheckCircle className="w-5 h-5 text-emerald-600" />
-                <span className="text-[14px] font-black text-slate-900">300 DPI Pre-Flight</span>
-                <span className="text-[9.5px] text-slate-500 font-medium">Free File Proof</span>
-              </div>
-              <div className="flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-blue-50/50">
-                <FiShield className="w-5 h-5 text-blue-600" />
-                <span className="text-[14px] font-black text-slate-900">100% Quality</span>
-                <span className="text-[9.5px] text-slate-500 font-medium">Re-print Guarantee</span>
-              </div>
+            {/* Trust Badges Strip below image */}
+            <div className="pt-2 flex items-center justify-center gap-6 text-[12px] font-extrabold text-slate-600">
+              <span className="flex items-center gap-1">
+                <FiStar className="w-4 h-4 text-amber-500 fill-amber-400" /> 4.9/5 Rating
+              </span>
+              <span>•</span>
+              <span className="flex items-center gap-1">
+                <FiShield className="w-4 h-4 text-blue-600" /> 40+ Years Trusted
+              </span>
+              <span>•</span>
+              <span className="flex items-center gap-1">
+                <FiTruck className="w-4 h-4 text-emerald-600" /> Fast Dispatch
+              </span>
             </div>
 
           </div>
 
-          {/* RIGHT COLUMN: PRODUCT CONFIGURATOR & PRICING ENGINE (7 cols) */}
+          {/* RIGHT COLUMN: PRODUCT CONFIGURATION & ORDER SUMMARY (7 cols) */}
           <div className="lg:col-span-7 space-y-6">
             
-            {/* Header: Title, Rating, Summary */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-3 flex-wrap">
-                <span className="px-3.5 py-1 rounded-full bg-[#FF5A1F]/10 text-[#FF5A1F] text-[14px] font-black uppercase tracking-wider border border-[#FF5A1F]/20">
-                  {product.category}
+            {/* Header Information (Matching Screenshot 1) */}
+            <div className="space-y-2.5">
+              {/* Category Pill Tag */}
+              <div>
+                <span className="px-3.5 py-1 rounded-full text-[11px] font-black uppercase tracking-wider text-[#EA580C] bg-[#FFF7ED] border border-[#EA580C]/40 inline-block">
+                  {product.category || 'PRINTING'}
                 </span>
-                {/* Orientation Badge */}
-                {product.orientation && (
-                  <span className={`px-3 py-1 rounded-full text-[12px] font-extrabold uppercase tracking-wider border flex items-center gap-1.5 ${
-                    product.orientation === 'vertical'
-                      ? 'bg-purple-50 text-purple-700 border-purple-200'
-                      : 'bg-blue-50 text-blue-700 border-blue-200'
-                  }`}>
-                    {product.orientation === 'vertical' ? (
-                      <svg width="12" height="14" viewBox="0 0 12 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <rect x="1" y="1" width="10" height="12" rx="1.5" stroke="currentColor" strokeWidth="1.5"/>
-                      </svg>
-                    ) : (
-                      <svg width="14" height="12" viewBox="0 0 14 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <rect x="1" y="1" width="12" height="10" rx="1.5" stroke="currentColor" strokeWidth="1.5"/>
-                      </svg>
-                    )}
-                    {product.orientation === 'vertical' ? 'Portrait' : 'Landscape'}
-                  </span>
-                )}
-                {/* Paper Sizes Badge */}
-                {product.paperSizes && product.paperSizes.length > 0 && product.paperSizes.map(size => (
-                  <span key={size} className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-extrabold uppercase tracking-wider">
-                    {size}
-                  </span>
-                ))}
-                <div className="flex items-center gap-1 text-amber-500 text-[14px] font-extrabold bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200">
-                  <FiStar className="w-3.5 h-3.5 fill-amber-400" />
-                  <span>4.9</span>
-                  <span className="text-slate-400 font-normal">(148 Press Reviews)</span>
-                </div>
               </div>
 
-              <h1 className="text-3xl sm:text-4xl font-black text-[#0B1633] tracking-tight leading-tight">
+              {/* Main Title */}
+              <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight leading-tight">
                 {product.title}
               </h1>
-            </div>
 
-            {/* LIVE DYNAMIC PRICING ENGINE BAR */}
-            <div id="pricing" className="bg-gradient-to-br from-white to-slate-50 rounded-3xl p-6 border border-[#E7EAF0] shadow-md space-y-4">
-              <div className="flex items-center justify-between flex-wrap gap-4">
-                <div>
-                  <span className="text-[14px] text-slate-500 font-bold uppercase tracking-wider block mb-1">
-                    Calculated Total (Incl. 18% GST)
-                  </span>
-                  <div className="flex items-baseline gap-3">
-                    <span className="text-4xl font-black text-[#FF5A1F] tracking-tight">
-                      ₹{totalPrice.toLocaleString()}
-                    </span>
-                    <span className="text-sm text-slate-600 font-extrabold font-mono">
-                      (₹{unitPrice} / unit)
-                    </span>
-                  </div>
-                </div>
-
-                <div className="text-right">
-                  <span className="px-3.5 py-1.5 rounded-full bg-emerald-100 text-emerald-800 text-[14px] font-extrabold border border-emerald-300 inline-flex items-center gap-1.5 shadow-xs">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-                    In Stock & Press Ready
-                  </span>
-                </div>
-              </div>
-
-              {activeTier && (
-                <div className="pt-3 border-t border-slate-200/80 flex items-center justify-between text-[14px] font-bold text-blue-900 bg-blue-50/80 p-3 rounded-2xl border border-blue-200/90">
-                  <span>🎉 Volume Discount Applied: Tier Rate for up to {activeTier.tierMin} units</span>
-                  <span className="font-extrabold text-blue-700">₹{activeTier.pricePerUnit}/unit</span>
-                </div>
-              )}
-            </div>
-
-            {/* STEP-BY-STEP PRODUCT CONFIGURATOR FORM */}
-            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#E7EAF0] shadow-sm space-y-6 text-[14px]">
-              <h3 className="font-black text-sm text-[#0B1633] uppercase tracking-wider border-b border-slate-100 pb-3 flex items-center justify-between">
-                <span>Configure Print Specifications</span>
-                <span className="text-[14px] font-bold text-[#FF5A1F] uppercase">Interactive Press Studio</span>
-              </h3>
-
-              {/* STEP 1: QUANTITY TIER & MANDATORY CUSTOM UNIT SELECTION */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <label className="font-extrabold text-sm text-[#0B1633] flex items-center gap-2">
-                    <span className="w-6 h-6 rounded-full bg-[#07152F] text-white flex items-center justify-center text-[14px] font-black">{stepCounter++}</span>
-                    <span>Select Quantity Tier:</span>
-                  </label>
-                  <span className="text-[14px] font-black text-[#FF5A1F] bg-[#FF5A1F]/10 px-3 py-1 rounded-full border border-[#FF5A1F]/20">
-                    {quantity || 0} units selected
-                  </span>
-                </div>
-
-                {/* Preset Tier Pills */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
-                  {(product.tieredPricing && product.tieredPricing.length > 0 ? product.tieredPricing : [
-                    { tierMin: minPieces, pricePerUnit: product.basePrice || product.price || 5 }
-                  ]).map((t, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => {
-                        setIsCustomQty(false);
-                        setQuantity(t.tierMin);
-                      }}
-                      className={`py-3 px-2.5 rounded-2xl font-extrabold text-[14px] transition border cursor-pointer flex flex-col items-center justify-center gap-1 ${
-                        !isCustomQty && quantity === t.tierMin
-                          ? 'bg-[#FF5A1F] text-white border-[#FF5A1F] shadow-md scale-105'
-                          : 'bg-[#F7F8FA] text-[#0B1633] border-[#E7EAF0] hover:border-[#FF5A1F]'
-                      }`}
-                    >
-                      <span>Up to {t.tierMin} units</span>
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
-                        !isCustomQty && quantity === t.tierMin ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'
-                      }`}>
-                        ₹{t.pricePerUnit}/unit
-                      </span>
-                    </button>
+              {/* Rating Row */}
+              <div className="flex items-center gap-2 text-sm font-bold text-slate-700">
+                <div className="flex items-center text-amber-400">
+                  {[...Array(5)].map((_, i) => (
+                    <FiStar key={i} className="w-4 h-4 fill-amber-400" />
                   ))}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsCustomQty(true);
-                      setQuantity(customQtyInput || minPieces);
-                    }}
-                    className={`py-3 px-2.5 rounded-2xl font-extrabold text-[14px] transition border cursor-pointer flex flex-col items-center justify-center gap-1 ${
-                      isCustomQty
-                        ? 'bg-[#07152F] text-white border-[#07152F] shadow-md scale-105'
-                        : 'bg-[#F7F8FA] text-[#0B1633] border-[#E7EAF0] hover:border-[#FF5A1F]'
-                    }`}
-                  >
-                    <span>Custom Qty</span>
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
-                      isCustomQty ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'
-                    }`}>
-                      Enter Units
-                    </span>
-                  </button>
                 </div>
-
-                {/* Custom Quantity Input Box with Mandatory Flag */}
-                {isCustomQty && (
-                  <div className={`p-4.5 rounded-2xl border transition-all duration-200 ${
-                    !customQtyInput || parseInt(customQtyInput) < minPieces || isNaN(parseInt(customQtyInput))
-                      ? 'bg-rose-50/80 border-rose-300 ring-2 ring-rose-200'
-                      : 'bg-[#F7F8FA] border-[#E7EAF0]'
-                  }`}>
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                      <div className="flex items-center gap-3 w-full sm:w-auto">
-                        <label htmlFor="customQtyField" className="font-extrabold text-[14px] text-[#0B1633] shrink-0 flex items-center gap-1">
-                          <span>Enter Custom Units (Mandatory)</span>
-                          <span className="text-rose-600 font-extrabold text-sm">*</span>:
-                        </label>
-                        <input
-                          id="customQtyField"
-                          type="number"
-                          min={minPieces}
-                          value={customQtyInput}
-                          onChange={(e) => {
-                            const raw = e.target.value;
-                            setCustomQtyInput(raw);
-                            const val = parseInt(raw);
-                            if (!isNaN(val) && val > 0) {
-                              setQuantity(val);
-                            } else {
-                              setQuantity(0);
-                            }
-                          }}
-                          placeholder={`Min ${minPieces} pcs`}
-                          className={`w-36 bg-white border rounded-xl px-3.5 py-2 font-black text-sm text-[#0B1633] focus:outline-none shadow-xs ${
-                            !customQtyInput || parseInt(customQtyInput) < minPieces || isNaN(parseInt(customQtyInput))
-                              ? 'border-rose-400 focus:border-rose-600 text-rose-900 ring-1 ring-rose-300'
-                              : 'border-[#E7EAF0] focus:border-[#FF5A1F]'
-                          }`}
-                        />
-                      </div>
-                      {activeTier && (
-                        <span className="text-[14px] font-bold text-blue-700 bg-blue-50 border border-blue-200 px-3 py-1 rounded-full">
-                          Tier Rate ({activeTier.tierMin}+ units): ₹{activeTier.pricePerUnit}/unit
-                        </span>
-                      )}
-                    </div>
-
-                    {(!customQtyInput || parseInt(customQtyInput) <= 0 || isNaN(parseInt(customQtyInput))) ? (
-                      <div className="mt-2.5 text-rose-700 text-[14px] font-extrabold flex items-center gap-1.5">
-                        <span>⚠️ Mandatory Field: Please enter your desired quantity (Minimum {minPieces} pcs) to calculate price.</span>
-                      </div>
-                    ) : parseInt(customQtyInput) < minPieces ? (
-                      <div className="mt-2.5 text-amber-700 text-[14px] font-extrabold flex items-center gap-1.5">
-                        <span>⚠️ Minimum Order Quantity for this item is {minPieces} pieces. Please enter {minPieces} or more.</span>
-                      </div>
-                    ) : null}
-                  </div>
-                )}
+                <span className="font-extrabold text-slate-900">4.7</span>
+                <span className="text-slate-500 font-medium">(226 reviews)</span>
               </div>
 
-              {/* DYNAMIC VARIANT OPTION SECTIONS */}
+              {/* Price Range Sub-Header (Matching Screenshot 1) */}
+              <div className="flex items-baseline gap-2 pt-1">
+                <span className="text-sm font-medium text-slate-500">From</span>
+                <span className="text-2xl sm:text-3xl font-black text-[#EA580C]">
+                  ₹{lowestPrice.toFixed(2)}
+                </span>
+                <span className="text-sm font-medium text-slate-500">
+                  for {lowestQty} cards
+                </span>
+              </div>
+            </div>
+
+            {/* DYNAMIC OPTION SELECTORS (Matching Screenshot 1 Card Layout) */}
+            <div className="space-y-6 pt-2 border-t border-slate-100">
+              
+              {/* Render Each Option Group dynamically from admin settings */}
               {availableVariantEntries.map(([key, optionsList]) => {
-                const stepNum = stepCounter++;
                 const title = formatKeyToTitle(key);
                 const currentSelected = selectedVariants[key];
 
@@ -620,95 +457,63 @@ export function ProductDetailPage({ product, onBack, onNavigateCart }) {
                 if (key === 'customAreaPricing') {
                   const activePrice = matchedAreaTier ? (matchedAreaTier.priceModifier !== undefined ? matchedAreaTier.priceModifier : matchedAreaTier.price) : 0;
                   return (
-                    <div key={key} className="space-y-3 bg-gradient-to-r from-blue-50/80 via-slate-50 to-orange-50/50 p-4.5 rounded-2xl border border-blue-200/80 shadow-xs">
-                      <div className="flex items-center justify-between flex-wrap gap-2">
-                        <label className="font-extrabold text-sm text-[#0B1633] flex items-center gap-2">
-                          <span className="w-6 h-6 rounded-full bg-[#07152F] text-white flex items-center justify-center text-[14px] font-black">{stepNum}</span>
-                          <span>{title}:</span>
-                        </label>
+                    <div key={key} className="space-y-3 bg-[#FAFBFD] p-4.5 rounded-2xl border border-slate-200">
+                      <div className="flex items-center justify-between">
+                        <label className="font-bold text-[14px] text-slate-900">{title}:</label>
                         {calculatedAreaSqCm > 0 && matchedAreaTier && (
-                          <span className="text-[14px] font-black text-emerald-800 bg-emerald-100 border border-emerald-300 px-3 py-1 rounded-full flex items-center gap-1.5 shadow-xs">
-                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                            <span>Matched Tier: {matchedAreaTier.name || `Up to ${matchedAreaTier.maxArea} sq.ft`} (+₹{activePrice})</span>
+                          <span className="text-[12px] font-black text-emerald-800 bg-emerald-50 border border-emerald-300 px-3 py-0.5 rounded-full">
+                            Matched Tier: {matchedAreaTier.name || `Up to ${matchedAreaTier.maxArea} sq.ft`} (+₹{activePrice})
                           </span>
                         )}
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div className="space-y-1">
-                          <label className="block text-[14px] font-extrabold text-slate-700">Enter Height (ft):</label>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-[12px] font-bold text-slate-600 mb-1">Height (ft):</label>
                           <input
                             type="number"
                             min="0.1"
                             step="0.1"
                             value={customHeight}
                             onChange={(e) => setCustomHeight(e.target.value)}
-                            placeholder="e.g. 1.5"
-                            className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 font-black text-[14px] text-[#0B1633] focus:outline-none focus:border-[#FF5A1F] shadow-xs"
+                            className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 font-bold text-[14px] text-slate-900 focus:outline-none focus:border-[#EA580C]"
                           />
                         </div>
-                        <div className="space-y-1">
-                          <label className="block text-[14px] font-extrabold text-slate-700">Enter Width (ft):</label>
+                        <div>
+                          <label className="block text-[12px] font-bold text-slate-600 mb-1">Width (ft):</label>
                           <input
                             type="number"
                             min="0.1"
                             step="0.1"
                             value={customWidth}
                             onChange={(e) => setCustomWidth(e.target.value)}
-                            placeholder="e.g. 2"
-                            className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 font-black text-[14px] text-[#0B1633] focus:outline-none focus:border-[#FF5A1F] shadow-xs"
+                            className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 font-bold text-[14px] text-slate-900 focus:outline-none focus:border-[#EA580C]"
                           />
                         </div>
                       </div>
 
-                      <div className="p-3 bg-white rounded-xl border border-blue-100 flex items-center justify-between text-[14px] font-bold text-slate-700 shadow-3xs">
-                        <span>📐 Automatically Calculated Area:</span>
-                        <span className="text-sm font-black text-[#FF5A1F] font-mono">
-                          {calculatedAreaSqCm > 0 ? `${customHeight}ft × ${customWidth}ft = ${calculatedAreaSqCm} sq.ft` : 'Enter Height & Width'}
+                      <div className="p-2.5 bg-white rounded-xl border border-slate-200 flex items-center justify-between text-[13px] font-bold text-slate-700">
+                        <span>Calculated Area:</span>
+                        <span className="text-sm font-black text-[#EA580C]">
+                          {calculatedAreaSqCm > 0 ? `${customHeight}ft × ${customWidth}ft = ${calculatedAreaSqCm} sq.ft` : 'Enter dimensions'}
                         </span>
                       </div>
                     </div>
                   );
                 }
 
-                // Dropdown layout for paperStock & finishes
-                if (key === 'paperStock' || key === 'finishes') {
-                  return (
-                    <div key={key} className="space-y-2">
-                      <label className="font-extrabold text-sm text-[#0B1633] flex items-center gap-2">
-                        <span className="w-6 h-6 rounded-full bg-[#07152F] text-white flex items-center justify-center text-[14px] font-black">{stepNum}</span>
-                        <span>{title}:</span>
-                      </label>
-                      <select
-                        value={currentSelected}
-                        onChange={(e) => handleOptionChange(key, e.target.value)}
-                        className="w-full bg-[#F7F8FA] border border-[#E7EAF0] rounded-2xl p-3.5 font-bold text-[14px] text-[#0B1633] focus:outline-none focus:border-[#FF5A1F] shadow-xs cursor-pointer"
-                      >
-                        {optionsList.map((opt, i) => {
-                          const optName = typeof opt === 'string' ? opt : opt.name;
-                          const optPrice = typeof opt === 'object' && opt.priceModifier ? opt.priceModifier : 0;
-                          return (
-                            <option key={i} value={optName}>
-                              {optName} {optPrice > 0 ? `(+₹${optPrice}/unit)` : ''}
-                            </option>
-                          );
-                        })}
-                      </select>
-                    </div>
-                  );
-                }
-
-                // Grid button layout for all other option types
+                // Grid Card Selector for Sides, Edge Cutting, Paper Stock, Finishes, etc.
                 return (
                   <div key={key} className="space-y-2">
-                    <label className="font-extrabold text-sm text-[#0B1633] flex items-center gap-2">
-                      <span className="w-6 h-6 rounded-full bg-[#07152F] text-white flex items-center justify-center text-[14px] font-black">{stepNum}</span>
-                      <span>{title}:</span>
+                    <label className="font-bold text-[14px] text-slate-900 block">
+                      {title}
                     </label>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+
+                    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 gap-3">
                       {optionsList.map((opt, i) => {
                         const optName = typeof opt === 'string' ? opt : opt.name;
                         const optPrice = typeof opt === 'object' && opt.priceModifier ? opt.priceModifier : 0;
+                        const subtitle = getOptionSubtitle(optName, opt);
                         const isSelected = currentSelected === optName;
 
                         return (
@@ -716,17 +521,15 @@ export function ProductDetailPage({ product, onBack, onNavigateCart }) {
                             key={i}
                             type="button"
                             onClick={() => handleOptionChange(key, optName)}
-                            className={`py-3 px-3 rounded-2xl font-extrabold text-[14px] transition-all duration-150 border flex flex-col items-center justify-center gap-1.5 cursor-pointer text-center ${
+                            className={`p-3.5 rounded-xl text-center border-2 transition-all cursor-pointer flex flex-col items-center justify-center gap-0.5 ${
                               isSelected
-                                ? 'bg-[#FF5A1F] text-white border-[#FF5A1F] shadow-md scale-105 ring-2 ring-[#FF5A1F]/30'
-                                : 'bg-[#F7F8FA] text-[#0B1633] border-[#E7EAF0] hover:border-[#FF5A1F]'
+                                ? 'bg-[#FFF7ED] border-[#EA580C] text-[#EA580C] shadow-3xs'
+                                : 'bg-white border-slate-200 text-slate-800 hover:border-orange-300'
                             }`}
                           >
-                            <span>{optName}</span>
-                            <span className={`text-[9.5px] px-2 py-0.5 rounded-full font-bold ${
-                              isSelected ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'
-                            }`}>
-                              {optPrice > 0 ? `+₹${optPrice}/unit` : 'Included'}
+                            <span className="font-black text-[14px] leading-tight">{optName}</span>
+                            <span className={`text-[11.5px] font-medium ${isSelected ? 'text-[#EA580C]' : 'text-slate-500'}`}>
+                              {subtitle || (optPrice > 0 ? `+₹${optPrice}` : 'Included')}
                             </span>
                           </button>
                         );
@@ -736,171 +539,299 @@ export function ProductDetailPage({ product, onBack, onNavigateCart }) {
                 );
               })}
 
-              {/* STEP: UPLOAD PRINT ARTWORK DROPZONE */}
-              <div className="space-y-2 pt-2">
-                <label className="font-extrabold text-sm text-[#0B1633] flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-full bg-[#07152F] text-white flex items-center justify-center text-[14px] font-black">{stepCounter++}</span>
-                  <span>Upload Print Artwork File (PDF, AI, PSD, PNG):</span>
-                </label>
-                <label className="border-2 border-dashed border-[#E7EAF0] hover:border-[#FF5A1F] rounded-2xl p-5 text-center block bg-[#F7F8FA] cursor-pointer transition-all duration-200 group">
-                  <FiUploadCloud className="w-8 h-8 text-[#FF5A1F] mx-auto mb-2 group-hover:scale-110 transition-transform" />
-                  <span className="text-[14px] text-slate-800 font-extrabold block">
-                    {uploadedFile ? `Uploaded: ${uploadedFile.name}` : 'Click to select artwork file or drag here'}
-                  </span>
-                  <span className="text-[10px] text-slate-400 font-medium block mt-1">
-                    Accepts 300 DPI High-Res PDF, PSD, AI, EPS, PNG up to 100MB
-                  </span>
-                  <input
-                    type="file"
-                    className="hidden"
-                    onChange={(e) => setUploadedFile(e.target.files[0])}
-                  />
-                </label>
+              {/* QUANTITY CARDS SELECTOR (Matching Screenshot 1) */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="font-bold text-[14px] text-slate-900 block">
+                    Quantity
+                  </label>
+                  {activeTier && (
+                    <span className="text-[11px] font-extrabold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                      Tier Rate: ₹{activeTier.pricePerUnit}/pc
+                    </span>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {(product.tieredPricing && product.tieredPricing.length > 0 ? product.tieredPricing : [
+                    { tierMin: 300, pricePerUnit: 1.83 },
+                    { tierMin: 500, pricePerUnit: 1.60 },
+                    { tierMin: 800, pricePerUnit: 1.31 },
+                    { tierMin: 1000, pricePerUnit: 1.30 }
+                  ]).map((t, idx) => {
+                    const isSelected = !isCustomQty && quantity === t.tierMin;
+                    return (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => {
+                          setIsCustomQty(false);
+                          setQuantity(t.tierMin);
+                        }}
+                        className={`p-3 rounded-xl text-center border-2 transition-all cursor-pointer flex flex-col items-center justify-center gap-0.5 ${
+                          isSelected
+                            ? 'bg-[#FFF7ED] border-[#EA580C] text-[#EA580C] shadow-3xs'
+                            : 'bg-white border-slate-200 text-slate-800 hover:border-orange-300'
+                        }`}
+                      >
+                        <span className="font-black text-[14px]">{t.tierMin.toLocaleString()} pcs</span>
+                        <span className={`text-[11.5px] font-medium ${isSelected ? 'text-[#EA580C]' : 'text-slate-500'}`}>
+                          ₹{t.pricePerUnit.toFixed(2)}/pc
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Custom Quantity Option Toggle */}
+                <div className="pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setIsCustomQty(!isCustomQty)}
+                    className="text-[12px] font-bold text-[#EA580C] hover:underline bg-transparent border-none cursor-pointer"
+                  >
+                    {isCustomQty ? '← Select Preset Quantity Cards' : '+ Enter Custom Quantity'}
+                  </button>
+
+                  {isCustomQty && (
+                    <div className="mt-2 p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center gap-3">
+                      <label htmlFor="customQtyField" className="font-bold text-[13px] text-slate-700 shrink-0">
+                        Custom Quantity (pcs):
+                      </label>
+                      <input
+                        id="customQtyField"
+                        type="number"
+                        min="1"
+                        value={customQtyInput}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value) || 1;
+                          setCustomQtyInput(val);
+                          setQuantity(val);
+                        }}
+                        className="w-32 p-2 bg-white border border-slate-300 rounded-lg font-bold text-sm text-slate-900 focus:outline-none focus:border-[#EA580C]"
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
 
-            </div>
+              {/* UPLOAD YOUR DESIGN BOX (Matching Screenshot 2) */}
+              <div className="bg-[#FAFBFD] p-5 rounded-2xl border border-slate-200 space-y-4">
+                <div className="flex items-center gap-2">
+                  <FiUploadCloud className="w-5 h-5 text-[#EA580C]" />
+                  <h4 className="font-black text-[14px] text-slate-900 uppercase tracking-wide">
+                    Upload Your Design
+                  </h4>
+                </div>
 
-            {/* ACTION BUTTONS: ADD TO CART & BUY NOW */}
-            <div className="flex flex-col sm:flex-row gap-4 pt-2">
-              <button
-                onClick={handleAddToCart}
-                className="flex-1 py-4 px-6 rounded-2xl bg-[#FF5A1F] hover:bg-[#e44d15] text-white font-black text-sm tracking-wider uppercase shadow-xl shadow-[#FF5A1F]/25 flex items-center justify-center gap-2 cursor-pointer transition border-none hover:scale-[1.02]"
-              >
-                {addedSuccess ? (
-                  <>
-                    <FiCheckCircle className="w-5 h-5 text-white" /> Added to Cart!
-                  </>
-                ) : (
-                  <>
-                    <FiShoppingBag className="w-5 h-5" /> Add to Cart (₹{totalPrice.toLocaleString()})
-                  </>
-                )}
-              </button>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Front Design Dropzone */}
+                  <label className="border-2 border-dashed border-slate-300 hover:border-[#EA580C] bg-white rounded-2xl p-4 text-center cursor-pointer transition-colors block group">
+                    <div className="w-9 h-9 rounded-full bg-orange-50 text-[#EA580C] flex items-center justify-center mx-auto mb-1.5 group-hover:scale-110 transition-transform">
+                      <FiUploadCloud className="w-5 h-5" />
+                    </div>
+                    <span className="font-bold text-[13px] text-slate-900 block">
+                      {uploadedFrontFile ? `Front: ${uploadedFrontFile.name}` : 'Front Design'}
+                    </span>
+                    <span className="text-[11px] text-slate-400 font-medium block">
+                      Drop file or <span className="text-[#EA580C] underline font-bold">browse</span>
+                    </span>
+                    <input
+                      type="file"
+                      className="hidden"
+                      onChange={(e) => setUploadedFrontFile(e.target.files[0])}
+                    />
+                  </label>
 
-              <button
-                onClick={handleBuyNow}
-                className="py-4 px-8 rounded-2xl bg-[#07152F] hover:bg-slate-800 text-white font-black text-sm tracking-wider uppercase shadow-xl flex items-center justify-center gap-2 cursor-pointer transition border-none hover:scale-[1.02]"
-              >
-                <FiZap className="w-4 h-4 text-amber-400 fill-amber-400" /> Buy Now / Checkout
-              </button>
-            </div>
-
-            {/* PRODUCT INFORMATION ACCORDION DROPDOWN TABS */}
-            <div className="bg-white rounded-3xl border border-[#E7EAF0] shadow-sm divide-y divide-slate-100 overflow-hidden text-[14px]">
-              
-              {/* TAB 1: PRODUCT DESCRIPTION & HIGHLIGHTS (OPEN BY DEFAULT) */}
-              <div>
-                <button
-                  onClick={() => setOpenAccordion(openAccordion === 'description' ? null : 'description')}
-                  className="w-full p-4 sm:p-5 text-left font-extrabold text-sm text-[#0B1633] flex items-center justify-between cursor-pointer border-none bg-transparent hover:bg-slate-50 transition"
-                >
-                  <span className="flex items-center gap-2.5">
-                    <FiFileText className="w-4.5 h-4.5 text-[#FF5A1F]" /> Product Description & Overview
-                  </span>
-                  {openAccordion === 'description' ? <FiChevronUp className="w-4 h-4 text-slate-500" /> : <FiChevronDown className="w-4 h-4 text-slate-500" />}
-                </button>
-                {openAccordion === 'description' && (
-                  <div className="p-5 pt-1 text-slate-700 leading-relaxed text-[14px] space-y-4">
-                    <p className="font-medium text-slate-800 text-[14px] sm:text-sm leading-relaxed">
-                      {product.description || product.summary || 'High-quality custom print product crafted with premium finishing and industrial offset precision.'}
-                    </p>
-
-                    {/* Summary Quick Chips */}
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-2 border-t border-slate-100">
-                      <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200/70">
-                        <span className="text-[9.5px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">Selected Quantity</span>
-                        <span className="font-extrabold text-[#0B1633] text-[14px]">{quantity.toLocaleString()} Units</span>
+                  {/* Back Design Dropzone (if double-sided or optional) */}
+                  {selectedVariants.sides?.toLowerCase().includes('double') || selectedVariants.sides?.toLowerCase().includes('both') ? (
+                    <label className="border-2 border-dashed border-slate-300 hover:border-[#EA580C] bg-white rounded-2xl p-4 text-center cursor-pointer transition-colors block group">
+                      <div className="w-9 h-9 rounded-full bg-orange-50 text-[#EA580C] flex items-center justify-center mx-auto mb-1.5 group-hover:scale-110 transition-transform">
+                        <FiUploadCloud className="w-5 h-5" />
                       </div>
-                      <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200/70">
-                        <span className="text-[9.5px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">Category</span>
-                        <span className="font-extrabold text-[#0B1633] text-[14px] truncate block">{product.category}</span>
-                      </div>
-                      <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200/70">
-                        <span className="text-[9.5px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">Est. Turnaround</span>
-                        <span className="font-extrabold text-emerald-700 text-[14px]">{product.specs?.turnaround || product.turnaround || '24-48 Hours Express'}</span>
-                      </div>
+                      <span className="font-bold text-[13px] text-slate-900 block">
+                        {uploadedBackFile ? `Back: ${uploadedBackFile.name}` : 'Back Design'}
+                      </span>
+                      <span className="text-[11px] text-slate-400 font-medium block">
+                        Drop file or <span className="text-[#EA580C] underline font-bold">browse</span>
+                      </span>
+                      <input
+                        type="file"
+                        className="hidden"
+                        onChange={(e) => setUploadedBackFile(e.target.files[0])}
+                      />
+                    </label>
+                  ) : null}
+                </div>
+
+                <p className="text-[11px] text-slate-400 font-medium text-center">
+                  PDF, AI, PSD, JPG, PNG, SVG, CDR — Max 10MB
+                </p>
+
+                {/* Design Notes Textarea */}
+                <textarea
+                  rows={2}
+                  value={designNotes}
+                  onChange={(e) => setDesignNotes(e.target.value)}
+                  placeholder="Design notes or special instructions..."
+                  className="w-full p-3 rounded-xl border border-slate-200 text-[13px] font-medium text-slate-800 bg-white focus:outline-none focus:border-[#EA580C] resize-none"
+                />
+              </div>
+
+              {/* ORDER SUMMARY DARK CARD (Matching Screenshot 2) */}
+              <div className="bg-[#0F172A] text-white rounded-2xl p-6 shadow-xl space-y-4">
+                <h4 className="font-black text-base text-white border-b border-slate-800 pb-3">
+                  Order Summary
+                </h4>
+
+                <div className="space-y-2.5 text-[13.5px]">
+                  {/* Selected Options List */}
+                  {Object.entries(selectedVariants).map(([key, val]) => (
+                    <div key={key} className="flex items-center justify-between font-medium">
+                      <span className="text-slate-400">{formatKeyToTitle(key)}</span>
+                      <span className="font-bold text-white text-right">{val}</span>
+                    </div>
+                  ))}
+
+                  {/* Quantity Row */}
+                  <div className="flex items-center justify-between font-medium">
+                    <span className="text-slate-400">Quantity</span>
+                    <span className="font-bold text-white">{quantity.toLocaleString()}</span>
+                  </div>
+
+                  <div className="pt-2 border-t border-slate-800 space-y-2">
+                    {/* Unit Price Row */}
+                    <div className="flex items-center justify-between font-medium">
+                      <span className="text-slate-400">Unit Price</span>
+                      <span className="font-bold text-white font-mono">₹{unitPrice.toFixed(2)}/pc</span>
                     </div>
 
-                    {/* Active Variant Configuration Summary */}
-                    {Object.keys(selectedVariants).length > 0 && (
-                      <div className="pt-2 space-y-1.5">
-                        <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Selected Configuration:</span>
-                        <div className="flex flex-wrap gap-1.5">
-                          {Object.entries(selectedVariants).map(([key, val]) => (
-                            <span key={key} className="px-2.5 py-1 rounded-xl bg-slate-100 border border-slate-200 text-[14px] font-bold text-slate-800 flex items-center gap-1">
-                              <span className="text-slate-400 font-semibold">{formatKeyToTitle(key)}:</span>
-                              <span className="text-[#0B1633] font-black">{val}</span>
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+                    {/* Total Row */}
+                    <div className="flex items-center justify-between pt-1">
+                      <span className="font-bold text-white text-base">Total</span>
+                      <span className="font-black text-2xl text-[#EA580C]">
+                        ₹{totalPrice.toFixed(2)}
+                      </span>
+                    </div>
                   </div>
-                )}
+                </div>
               </div>
 
-              {/* TAB 2: PRINT SPECIFICATIONS & PRE-FLIGHT RULES */}
+              {/* ADD TO CART MAIN BUTTON (Matching Screenshot 2) */}
               <div>
                 <button
-                  onClick={() => setOpenAccordion(openAccordion === 'overview' ? null : 'overview')}
-                  className="w-full p-4 sm:p-5 text-left font-extrabold text-sm text-[#0B1633] flex items-center justify-between cursor-pointer border-none bg-transparent hover:bg-slate-50 transition"
+                  type="button"
+                  onClick={handleAddToCart}
+                  className="w-full py-4 rounded-xl bg-[#EA580C] hover:bg-[#C2410C] text-white font-black text-base uppercase tracking-wider shadow-lg shadow-orange-500/20 flex items-center justify-center gap-2 cursor-pointer transition-all border-none active:scale-[0.99]"
                 >
-                  <span className="flex items-center gap-2.5">
-                    <FiInfo className="w-4.5 h-4.5 text-[#FF5A1F]" /> Print Guidelines & File Pre-flight Rules
-                  </span>
-                  {openAccordion === 'overview' ? <FiChevronUp className="w-4 h-4 text-slate-500" /> : <FiChevronDown className="w-4 h-4 text-slate-500" />}
+                  {addedSuccess ? (
+                    <>
+                      <FiCheckCircle className="w-5 h-5 text-white" /> Added to Cart!
+                    </>
+                  ) : (
+                    <>
+                      <FiShoppingBag className="w-5 h-5" /> Add to Cart — ₹{totalPrice.toFixed(2)}
+                    </>
+                  )}
                 </button>
-                {openAccordion === 'overview' && (
-                  <div className="p-5 pt-1 text-slate-600 leading-relaxed space-y-2">
-                    <p className="font-medium text-[14px]">
-                      For optimal CMYK press calibration, submit artwork files with 3mm bleed margins and minimum 300 DPI resolution.
+              </div>
+
+              {/* MINT GREEN INFO CARD (Matching Screenshot 1) */}
+              <div className="bg-[#ECFDF5] border border-emerald-200/90 rounded-2xl p-4.5 space-y-1 text-slate-800">
+                <div className="flex items-center gap-2 text-emerald-800 font-extrabold text-[14px]">
+                  <FiCheckCircle className="w-5 h-5 text-emerald-600 shrink-0" />
+                  <span>No design ready? No problem!</span>
+                </div>
+                <p className="text-[12.5px] font-medium text-emerald-950/80 leading-relaxed pl-7">
+                  Upload your artwork after placing the order, or request free design assistance from our experts during checkout.
+                </p>
+              </div>
+
+              {/* PRODUCT SUMMARY SNIPPET NOTE (Matching Screenshot 1) */}
+              <div className="text-[13px] font-medium text-slate-600 leading-relaxed bg-slate-50 p-4 rounded-xl border border-slate-200/80">
+                {product.summary || product.description || 'Lightweight yet sturdy standard cards. Ideal for everyday networking, event handouts, and high-volume distribution.'}
+              </div>
+
+              {/* DISPATCH & WHATSAPP SUPPORT LINES (Matching Screenshot 1) */}
+              <div className="space-y-2 text-[13px] font-bold text-slate-700 pt-1">
+                <div className="flex items-center gap-2">
+                  <FiTruck className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>Dispatch: <strong className="text-slate-900">2-3 Working Days</strong></span>
+                </div>
+                <div className="flex items-center gap-2 text-slate-600">
+                  <span className="text-[#25D366] font-black">💬</span>
+                  <span>Need urgent delivery or custom sizes? <a href="https://wa.me/919876543210" target="_blank" rel="noopener noreferrer" className="text-[#EA580C] hover:underline font-bold">WhatsApp us</a></span>
+                </div>
+              </div>
+
+              {/* CTA ACTION BUTTONS: GET QUOTE & CALL NOW (Matching Screenshot 1) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                <a
+                  href="https://wa.me/919876543210?text=Hello%20Printigly,%20I%20need%20a%20quote%20for%20product%20details"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-sm uppercase tracking-wider shadow-md flex items-center justify-center gap-2 cursor-pointer transition-colors border-none text-decoration-none"
+                >
+                  <FiFileText className="w-4 h-4" /> Get Quote
+                </a>
+                <a
+                  href="tel:+919876543210"
+                  className="w-full py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-sm uppercase tracking-wider shadow-md flex items-center justify-center gap-2 cursor-pointer transition-colors border-none text-decoration-none"
+                >
+                  <FiZap className="w-4 h-4" /> Call Now
+                </a>
+              </div>
+
+            </div>
+
+            {/* PRODUCT DETAILS ACCORDION DROPDOWN TABS */}
+            <div className="bg-white rounded-2xl border border-slate-200 divide-y divide-slate-100 overflow-hidden text-[14px] mt-6">
+              {/* Product Description */}
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setOpenAccordion(openAccordion === 'description' ? null : 'description')}
+                  className="w-full p-4 text-left font-bold text-slate-900 flex items-center justify-between cursor-pointer border-none bg-transparent hover:bg-slate-50 transition"
+                >
+                  <span className="flex items-center gap-2">
+                    <FiFileText className="w-4 h-4 text-[#EA580C]" /> Product Description & Overview
+                  </span>
+                  {openAccordion === 'description' ? <FiChevronUp className="w-4 h-4 text-slate-400" /> : <FiChevronDown className="w-4 h-4 text-slate-400" />}
+                </button>
+                {openAccordion === 'description' && (
+                  <div className="p-4 pt-0 text-slate-600 leading-relaxed text-[13.5px]">
+                    <p className="font-medium">
+                      {product.description || product.summary || 'High-quality custom print product crafted with premium finishing and offset litho precision.'}
                     </p>
-                    <ul className="list-disc pl-4 space-y-1 font-medium text-[14px] text-slate-700">
-                      <li>Vector PDF, AI, or PSD preferred for crisp typography and vector logos</li>
-                      <li>CMYK color space (RGB files automatically converted during RIP raster processing)</li>
-                      <li>Font outlines enabled or fonts embedded inside vector files</li>
-                    </ul>
                   </div>
                 )}
               </div>
 
-              {/* TAB 3: PRODUCTION TURNAROUND & SHIPPING */}
-              <div>
-                <button
-                  onClick={() => setOpenAccordion(openAccordion === 'shipping' ? null : 'shipping')}
-                  className="w-full p-4 sm:p-5 text-left font-extrabold text-sm text-[#0B1633] flex items-center justify-between cursor-pointer border-none bg-transparent hover:bg-slate-50 transition"
-                >
-                  <span className="flex items-center gap-2.5">
-                    <FiTruck className="w-4.5 h-4.5 text-[#FF5A1F]" /> Production Turnaround & Shipping Logistics
-                  </span>
-                  {openAccordion === 'shipping' ? <FiChevronUp className="w-4 h-4 text-slate-500" /> : <FiChevronDown className="w-4 h-4 text-slate-500" />}
-                </button>
-                {openAccordion === 'shipping' && (
-                  <div className="p-5 pt-1 text-slate-600 leading-relaxed space-y-1 font-medium text-[14px]">
-                    <p className="text-slate-800 font-bold">⚡ Standard Production: 3-5 business days after artwork approval.</p>
-                    <p className="text-slate-800 font-bold">⚡ Same-Day Express: Select Express at checkout for 24-hour priority dispatch.</p>
-                  </div>
-                )}
-              </div>
-
-              {/* TAB 4: 100% QUALITY & RE-PRINT GUARANTEE */}
-              <div>
-                <button
-                  onClick={() => setOpenAccordion(openAccordion === 'guarantee' ? null : 'guarantee')}
-                  className="w-full p-4 sm:p-5 text-left font-extrabold text-sm text-[#0B1633] flex items-center justify-between cursor-pointer border-none bg-transparent hover:bg-slate-50 transition"
-                >
-                  <span className="flex items-center gap-2.5">
-                    <FiShield className="w-4.5 h-4.5 text-[#FF5A1F]" /> 100% Quality & Re-print Guarantee
-                  </span>
-                  {openAccordion === 'guarantee' ? <FiChevronUp className="w-4 h-4 text-slate-500" /> : <FiChevronDown className="w-4 h-4 text-slate-500" />}
-                </button>
-                {openAccordion === 'guarantee' && (
-                  <div className="p-5 pt-1 text-slate-600 leading-relaxed font-medium text-[14px]">
-  Please note that our studio holds no responsibility or liability for any defects present upon the arrival of your print order.
-</div>
-                )}
-              </div>
-
+              {/* Technical Specifications */}
+              {product.specs && Object.keys(product.specs).length > 0 && (
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => setOpenAccordion(openAccordion === 'specs' ? null : 'specs')}
+                    className="w-full p-4 text-left font-bold text-slate-900 flex items-center justify-between cursor-pointer border-none bg-transparent hover:bg-slate-50 transition"
+                  >
+                    <span className="flex items-center gap-2">
+                      <FiInfo className="w-4 h-4 text-[#EA580C]" /> Technical Specifications
+                    </span>
+                    {openAccordion === 'specs' ? <FiChevronUp className="w-4 h-4 text-slate-400" /> : <FiChevronDown className="w-4 h-4 text-slate-400" />}
+                  </button>
+                  {openAccordion === 'specs' && (
+                    <div className="p-4 pt-0 text-slate-600 text-[13px] grid grid-cols-2 gap-2">
+                      {Object.entries(product.specs).map(([k, v]) => (
+                        <div key={k} className="p-2 rounded-lg bg-slate-50 border border-slate-100">
+                          <span className="text-[10px] uppercase font-bold text-slate-400 block">{k}</span>
+                          <span className="font-bold text-slate-800">{v}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
           </div>
@@ -908,13 +839,77 @@ export function ProductDetailPage({ product, onBack, onNavigateCart }) {
         </div>
       </div>
 
+      {/* GOOGLE REVIEWS SECTION (Matching Screenshot 2) */}
+      <GoogleReviewsSection />
+
+      {/* DYNAMIC RELATED PRODUCTS SECTION (Matching Screenshot 3) */}
+      {relatedProductsList.length > 0 && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 space-y-6">
+          <div className="border-t border-slate-200 pt-8">
+            <h3 className="text-2xl font-black text-slate-900 tracking-tight">
+              Related products
+            </h3>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {relatedProductsList.map((relProd) => {
+              const relImg = relProd.images?.[0] || relProd.image;
+              const relPrice = relProd.basePrice || relProd.price || 299;
+              return (
+                <div key={relProd.id} className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs hover:border-orange-300 transition-all flex flex-col justify-between group">
+                  <div>
+                    <div className="h-44 bg-slate-100 relative overflow-hidden">
+                      {relImg ? (
+                        <img src={relImg} alt={relProd.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                      ) : (
+                        <div className="w-full h-full bg-slate-100 flex flex-col items-center justify-center text-slate-400">
+                          <FiPackage className="w-8 h-8 text-slate-300" />
+                        </div>
+                      )}
+                      <span className="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full bg-orange-50 text-[#EA580C] font-extrabold text-[10px] uppercase border border-orange-200">
+                        {relProd.category || 'Printing'}
+                      </span>
+                    </div>
+
+                    <div className="p-4 space-y-2">
+                      <h4 className="font-extrabold text-sm text-slate-900 line-clamp-1 group-hover:text-[#EA580C] transition-colors">
+                        {relProd.title}
+                      </h4>
+                      <div className="flex items-baseline gap-1 text-slate-500 text-xs font-bold">
+                        <span>From</span>
+                        <span className="text-base font-black text-[#EA580C]">₹{relPrice}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-4 pt-0 border-t border-slate-100 mt-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (onSelectProduct) {
+                          onSelectProduct(relProd);
+                        }
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      className="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-[#EA580C] text-white font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors border-none cursor-pointer"
+                    >
+                      Select options
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <ArtworkUploadModal
         isOpen={isArtworkModalOpen}
         onClose={() => setIsArtworkModalOpen(false)}
         onConfirmUpload={handleConfirmArtworkUpload}
         productTitle={product.title || product.name}
       />
+
     </div>
   );
 }
-

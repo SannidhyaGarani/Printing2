@@ -12,19 +12,24 @@ import {
   Sparkles,
   DollarSign,
   FolderPlus,
-  AlignJustify,
-  AlignCenter,
-  Maximize2,
-  FileText,
-  Tag,
-  Info,
-  Zap,
-  Sliders,
-  ChevronRight
+  Zap
 } from 'lucide-react';
 import { useAdmin } from '../../context/AdminContext';
 import { uploadToCloudinary } from '../../../services/cloudinary';
 import { DEFAULT_CATALOG_OPTIONS } from '../../../services/firebase';
+
+// Sub-Section Components
+import { FormSectionCustomizerToolbar } from './sections/FormSectionCustomizerToolbar';
+import { BasicDetailsSection } from './sections/BasicDetailsSection';
+import { OrientationSection } from './sections/OrientationSection';
+import { PaperSizesSection } from './sections/PaperSizesSection';
+import { TechSpecsSection } from './sections/TechSpecsSection';
+import { NcrEngineSection } from './sections/NcrEngineSection';
+import { VisitingCardEngineSection } from './sections/VisitingCardEngineSection';
+import { BrochureEngineSection } from './sections/BrochureEngineSection';
+import { StickerEngineSection } from './sections/StickerEngineSection';
+import { AreaCalcEngineSection } from './sections/AreaCalcEngineSection';
+import { TieredPricingSection } from './sections/TieredPricingSection';
 
 // ============================================================================
 // Top-Level Component: VariantSectionCard
@@ -306,7 +311,7 @@ export const ProductCatalogManager = () => {
   const [formData, setFormData] = useState({
     title: '',
     slug: '',
-    category: 'Business Stationery',
+    category: 'Business Cards',
     basePrice: 5.0,
     minOrderQty: 100,
     summary: '',
@@ -339,13 +344,24 @@ export const ProductCatalogManager = () => {
     setFormData({
       title: '',
       slug: '',
-      category: categories[0] || 'Business Stationery',
+      category: categories[0] || 'Business Cards',
       basePrice: 5.0,
       minOrderQty: 100,
       summary: '',
       description: '',
       orientation: 'horizontal',
       paperSizes: ['A4'],
+      enableOrientation: true,
+      enablePaperSizes: true,
+      enableTechSpecs: true,
+      enableTieredPricing: true,
+      enableCustomArea: false,
+      enableNcrEngine: false,
+      enableVisitingCardEngine: false,
+      enableBrochureEngine: false,
+      enableStickerEngine: false,
+      searchAliases: ['stationery', 'custom print'],
+      relatedProductIds: [],
       specs: {
         paperGsm: '350 GSM',
         dimensions: '91mm x 53mm',
@@ -385,6 +401,17 @@ export const ProductCatalogManager = () => {
       minOrderQty: prod.minOrderQty || 100,
       orientation: prod.orientation || 'horizontal',
       paperSizes: prod.paperSizes || [],
+      enableOrientation: prod.enableOrientation ?? true,
+      enablePaperSizes: prod.enablePaperSizes ?? true,
+      enableTechSpecs: prod.enableTechSpecs ?? true,
+      enableTieredPricing: prod.enableTieredPricing ?? true,
+      enableCustomArea: prod.enableCustomArea ?? false,
+      enableNcrEngine: prod.enableNcrEngine ?? false,
+      enableVisitingCardEngine: prod.enableVisitingCardEngine ?? false,
+      enableBrochureEngine: prod.enableBrochureEngine ?? false,
+      enableStickerEngine: prod.enableStickerEngine ?? false,
+      searchAliases: prod.searchAliases || [],
+      relatedProductIds: prod.relatedProductIds || [],
       specs: prod.specs || { paperGsm: '350 GSM', dimensions: '91mm x 53mm', printTech: 'Offset Litho', turnaround: '24 Hours' },
       variants: {
         paperStock: prod.variants?.paperStock ?? catalogOptions?.paperStock ?? DEFAULT_CATALOG_OPTIONS.paperStock,
@@ -410,13 +437,20 @@ export const ProductCatalogManager = () => {
       setFormData(prev => ({
         ...prev,
         title: 'Premium Velvet Business Cards',
-        category: categories[0] || 'Business Stationery',
+        category: 'Business Cards',
         basePrice: 3.5,
         minOrderQty: 100,
         summary: '350 GSM luxury cardstock with velvet soft-touch coating.',
-        orientation: 'horizontal',
-        paperSizes: ['A4', 'Custom'],
-        specs: { paperGsm: '350 GSM', dimensions: '91mm x 53mm', printTech: 'Offset Litho', turnaround: '24-48 Hours' },
+        enableOrientation: false,
+        enablePaperSizes: true,
+        enableTechSpecs: true,
+        enableVisitingCardEngine: true,
+        enableCustomArea: false,
+        enableNcrEngine: false,
+        enableStickerEngine: false,
+        searchAliases: ['visiting card', 'business card', 'name card'],
+        paperSizes: ['Standard (89x51mm)', 'Square (60x60mm)'],
+        specs: { paperGsm: '350 GSM', dimensions: '89mm x 51mm', printTech: 'Offset Litho', turnaround: '24-48 Hours' },
         tieredPricing: [
           { tierMin: 100, pricePerUnit: 4.5 },
           { tierMin: 500, pricePerUnit: 3.5 },
@@ -427,12 +461,21 @@ export const ProductCatalogManager = () => {
       setFormData(prev => ({
         ...prev,
         title: 'A4 Glossy Promotional Flyers',
-        category: categories.find(c => c.toLowerCase().includes('flyer') || c.toLowerCase().includes('print')) || categories[0] || 'Flyers',
+        category: 'Printing',
         basePrice: 4.0,
         minOrderQty: 250,
         summary: 'Vibrant full-color printed leaflets for sales and promotion.',
+        enableOrientation: true,
+        enablePaperSizes: true,
+        enableTechSpecs: true,
+        enableBrochureEngine: true,
+        enableCustomArea: false,
+        enableNcrEngine: false,
+        enableVisitingCardEngine: false,
+        enableStickerEngine: false,
+        searchAliases: ['parcha', 'pamphlet', 'pamplet', 'leaflet', 'handbill'],
         orientation: 'vertical',
-        paperSizes: ['A4', 'A5', 'A3'],
+        paperSizes: ['A4', 'A5', 'A6', 'DL', '1/4 Size', '1/6 Size'],
         specs: { paperGsm: '170 GSM Gloss', dimensions: '210mm x 297mm (A4)', printTech: 'Digital Litho', turnaround: '24 Hours' },
         tieredPricing: [
           { tierMin: 250, pricePerUnit: 5.0 },
@@ -444,12 +487,18 @@ export const ProductCatalogManager = () => {
       setFormData(prev => ({
         ...prev,
         title: 'Outdoor Vinyl Flex Banner (Sq.Ft)',
-        category: categories.find(c => c.toLowerCase().includes('banner') || c.toLowerCase().includes('sign')) || categories[0] || 'Banners',
+        category: 'Printing',
         basePrice: 18.0,
         minOrderQty: 1,
         summary: 'Weatherproof high-resolution flex banner calculated per sq. feet.',
-        orientation: 'horizontal',
-        paperSizes: ['Custom'],
+        enableOrientation: false,
+        enablePaperSizes: false,
+        enableCustomArea: true,
+        enableTechSpecs: true,
+        enableNcrEngine: false,
+        enableVisitingCardEngine: false,
+        enableStickerEngine: false,
+        searchAliases: ['flex', 'banner', 'hoarding', 'star flex', 'vinyl'],
         specs: { paperGsm: '440 GSM Star Flex', dimensions: 'Custom (Height x Width in ft)', printTech: 'Eco-Solvent', turnaround: '24 Hours' },
         tieredPricing: [
           { tierMin: 1, pricePerUnit: 22.0 },
@@ -457,16 +506,65 @@ export const ProductCatalogManager = () => {
           { tierMin: 50, pricePerUnit: 15.0 }
         ]
       }));
+    } else if (type === 'billBook') {
+      setFormData(prev => ({
+        ...prev,
+        title: 'GST Invoice / Bill Book (NCR)',
+        category: 'Printing',
+        basePrice: 120.0,
+        minOrderQty: 5,
+        summary: 'Carbonless NCR duplicate/triplicate bill books with serial numbering.',
+        enableOrientation: false,
+        enablePaperSizes: true,
+        enableNcrEngine: true,
+        enableTechSpecs: true,
+        enableCustomArea: false,
+        enableVisitingCardEngine: false,
+        enableStickerEngine: false,
+        searchAliases: ['rasid book', 'bill book', 'invoice book', 'challan book', 'receipt book'],
+        paperSizes: ['A4', 'A5', '1/3 Size', '1/4 Size'],
+        specs: { paperGsm: 'NCR Carbonless', dimensions: 'A5 (148 x 210mm)', printTech: 'Offset Single/Double Colour', turnaround: '3-4 Days' },
+        tieredPricing: [
+          { tierMin: 5, pricePerUnit: 140.0 },
+          { tierMin: 10, pricePerUnit: 120.0 },
+          { tierMin: 25, pricePerUnit: 95.0 }
+        ]
+      }));
+    } else if (type === 'sticker') {
+      setFormData(prev => ({
+        ...prev,
+        title: 'Custom Die-Cut Vinyl Stickers',
+        category: 'Printing',
+        basePrice: 2.5,
+        minOrderQty: 100,
+        summary: 'Waterproof die-cut vinyl stickers for products and branding.',
+        enableOrientation: false,
+        enablePaperSizes: false,
+        enableStickerEngine: true,
+        enableTechSpecs: true,
+        enableCustomArea: false,
+        searchAliases: ['sticker', 'label', 'vinyl sticker', 'die cut sticker', 'product label'],
+        specs: { paperGsm: 'Vinyl Waterproof', dimensions: 'Custom Shape', printTech: 'UV Cut', turnaround: '48 Hours' },
+        tieredPricing: [
+          { tierMin: 100, pricePerUnit: 3.5 },
+          { tierMin: 500, pricePerUnit: 2.5 },
+          { tierMin: 1000, pricePerUnit: 1.8 }
+        ]
+      }));
     } else if (type === 'boxPackaging') {
       setFormData(prev => ({
         ...prev,
         title: 'Custom Product Packaging Box',
-        category: categories.find(c => c.toLowerCase().includes('pack') || c.toLowerCase().includes('box')) || categories[0] || 'Packaging',
+        category: 'Corporate Gifting',
         basePrice: 35.0,
         minOrderQty: 50,
         summary: 'Custom size die-cut corrugated carton product box.',
-        orientation: 'horizontal',
-        paperSizes: ['Custom'],
+        enableOrientation: false,
+        enablePaperSizes: false,
+        enableCustomArea: true,
+        enableTechSpecs: true,
+        enableNcrEngine: false,
+        searchAliases: ['box', 'packaging', 'dabba', 'mailer box'],
         specs: { paperGsm: '350 GSM + Flute', dimensions: 'Custom Die-Cut', printTech: 'UV Offset', turnaround: '3-5 Days' }
       }));
     }
@@ -486,7 +584,6 @@ export const ProductCatalogManager = () => {
   const handleFormSubmit = async (e) => {
     e.preventDefault();
     await saveProduct(formData);
-    // Sync all options back to Firebase catalogOptions so all future products load them
     if (formData.variants && updateCatalogOptions) {
       await updateCatalogOptions({
         ...catalogOptions,
@@ -497,7 +594,6 @@ export const ProductCatalogManager = () => {
     setEditingProduct(null);
   };
 
-  // Updates option items locally in formData WITHOUT forcing immediate global Firebase context invalidation on every single keypress
   const handleUpdateVariantItems = (groupKey, newItemsList) => {
     setFormData(prev => ({
       ...prev,
@@ -713,7 +809,7 @@ export const ProductCatalogManager = () => {
         ))}
       </div>
 
-      {/* Form Editor Mode - 100% RELIABLE TABBED MODAL OVERLAY */}
+      {/* Form Editor Mode - CLEAN MODULAR TABBED OVERLAY */}
       {isCreating && (
         <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs flex justify-center items-center p-2 sm:p-4 animate-in fade-in duration-200">
           <form
@@ -776,6 +872,20 @@ export const ProductCatalogManager = () => {
                   </button>
                   <button
                     type="button"
+                    onClick={() => applyPresetTemplate('billBook')}
+                    className="px-3 py-1 rounded-lg bg-white hover:bg-blue-600 hover:text-white text-slate-700 font-bold text-[12px] border border-blue-200 shadow-3xs transition cursor-pointer"
+                  >
+                    📑 NCR Bill Book
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => applyPresetTemplate('sticker')}
+                    className="px-3 py-1 rounded-lg bg-white hover:bg-blue-600 hover:text-white text-slate-700 font-bold text-[12px] border border-blue-200 shadow-3xs transition cursor-pointer"
+                  >
+                    🏷️ Sticker White Ink
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => applyPresetTemplate('boxPackaging')}
                     className="px-3 py-1 rounded-lg bg-white hover:bg-blue-600 hover:text-white text-slate-700 font-bold text-[12px] border border-blue-200 shadow-3xs transition cursor-pointer"
                   >
@@ -824,361 +934,58 @@ export const ProductCatalogManager = () => {
             {/* Tabbed Form Body - STRICT INDEPENDENT SCROLL CONTAINER */}
             <div className="p-6 space-y-6 overflow-y-auto flex-1 text-[14px] custom-scrollbar bg-slate-50/30">
 
-              {/* TAB 1: GENERAL INFO & MEDIA */}
+              {/* TAB 1: GENERAL INFO, ENGINES & MEDIA */}
               {formActiveTab === 'general' && (
                 <div className="space-y-6 animate-in fade-in duration-150">
-                  <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-3xs space-y-4">
-                    <h4 className="font-extrabold text-slate-900 text-[14px] uppercase tracking-wider text-blue-600 flex items-center gap-2">
-                      <Package className="w-4 h-4" /> Basic Details & Classification
-                    </h4>
+                  {/* Basic Details & Classification Section */}
+                  <BasicDetailsSection
+                    formData={formData}
+                    setFormData={setFormData}
+                    products={products}
+                    megamenuCategories={megamenuCategories}
+                    updateMegamenuCategories={updateMegamenuCategories}
+                    showInlineCatInput={showInlineCatInput}
+                    setShowInlineCatInput={setShowInlineCatInput}
+                    inlineCatInput={inlineCatInput}
+                    setInlineCatInput={setInlineCatInput}
+                    showInlineSubcatInput={showInlineSubcatInput}
+                    setShowInlineSubcatInput={setShowInlineSubcatInput}
+                    inlineSubcatInput={inlineSubcatInput}
+                    setInlineSubcatInput={setInlineSubcatInput}
+                  />
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="md:col-span-2">
-                        <label className="block font-bold text-slate-700 mb-1.5 uppercase text-[10px] tracking-wider">Product Title *</label>
-                        <input
-                          type="text"
-                          value={formData.title}
-                          onChange={(e) => setFormData({ ...formData, title: e.target.value, slug: e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') })}
-                          required
-                          className="w-full p-3 rounded-xl border border-slate-200 font-bold text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 text-[14px]"
-                          placeholder="e.g. Luxury Velvet Soft-Touch Business Cards"
-                        />
+                  {/* Form Section Customizer Toolbar */}
+                  <FormSectionCustomizerToolbar
+                    formData={formData}
+                    setFormData={setFormData}
+                  />
+
+                  {/* Optional Orientation & Paper Sizes Card */}
+                  {(formData.enableOrientation !== false || formData.enablePaperSizes !== false) && (
+                    <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-3xs space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <OrientationSection formData={formData} setFormData={setFormData} />
+                        <PaperSizesSection formData={formData} setFormData={setFormData} />
                       </div>
-
-                      <div>
-                        <label className="block font-bold text-slate-700 mb-1.5 uppercase text-[10px] tracking-wider">Base Price (₹) *</label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          value={formData.basePrice}
-                          onChange={(e) => setFormData({ ...formData, basePrice: parseFloat(e.target.value) || 0 })}
-                          className="w-full p-3 rounded-xl border border-slate-200 font-extrabold text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 text-[14px]"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block font-bold text-slate-700 mb-1.5 uppercase text-[10px] tracking-wider">Minimum Order Qty (MOQ) *</label>
-                        <input
-                          type="number"
-                          min="1"
-                          value={formData.minOrderQty || 100}
-                          onChange={(e) => setFormData({ ...formData, minOrderQty: parseInt(e.target.value) || 1 })}
-                          className="w-full p-3 rounded-xl border border-slate-200 font-extrabold text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 text-[14px]"
-                        />
-                      </div>
-
-                      {/* Main Category Selector */}
-                      <div>
-                        <div className="flex items-center justify-between mb-1.5">
-                          <label className="block font-bold text-slate-700 uppercase text-[10px] tracking-wider">Main Category *</label>
-                          <button
-                            type="button"
-                            onClick={() => setShowInlineCatInput(!showInlineCatInput)}
-                            className="text-[10px] font-extrabold text-blue-600 hover:text-blue-800 bg-blue-50 px-2 py-0.5 rounded-lg flex items-center gap-1 cursor-pointer border-none"
-                          >
-                            <Plus className="w-3 h-3" /> Quick Add Category
-                          </button>
-                        </div>
-
-                        {showInlineCatInput ? (
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="text"
-                              value={inlineCatInput}
-                              onChange={(e) => setInlineCatInput(e.target.value)}
-                              placeholder="e.g. Stickers & Decals"
-                              className="flex-1 p-2.5 rounded-xl border border-blue-400 font-semibold text-[14px] focus:outline-none focus:border-blue-600 bg-blue-50/50"
-                            />
-                            <button
-                              type="button"
-                              onClick={async () => {
-                                if (inlineCatInput.trim()) {
-                                  const name = inlineCatInput.trim();
-                                  const newCat = {
-                                    id: name.toLowerCase().replace(/[^a-z0-9]/g, '-'),
-                                    title: name,
-                                    categoryQuery: name,
-                                    badge: null,
-                                    items: []
-                                  };
-                                  const updated = [...(megamenuCategories || []), newCat];
-                                  if (updateMegamenuCategories) await updateMegamenuCategories(updated);
-                                  setFormData({ ...formData, category: name, subcategory: '' });
-                                  setInlineCatInput('');
-                                  setShowInlineCatInput(false);
-                                }
-                              }}
-                              className="px-4 py-2.5 rounded-xl bg-blue-600 text-white font-extrabold text-[14px] hover:bg-blue-700 cursor-pointer border-none shrink-0 shadow-3xs"
-                            >
-                              Save
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setShowInlineCatInput(false)}
-                              className="px-2 py-2 text-slate-400 hover:text-slate-600 border-none bg-transparent cursor-pointer shrink-0"
-                            >
-                              ✕
-                            </button>
-                          </div>
-                        ) : (
-                          <select
-                            value={formData.category}
-                            onChange={(e) => {
-                              const newCat = e.target.value;
-                              const matched = (megamenuCategories || []).find(c => (c.categoryQuery || c.title) === newCat || c.title === newCat);
-                              const firstSub = matched?.items?.[0]?.name || '';
-                              setFormData({ ...formData, category: newCat, subcategory: firstSub });
-                            }}
-                            className="w-full p-3 rounded-xl border border-slate-200 font-bold text-slate-800 focus:outline-none focus:border-blue-500 bg-white text-[14px]"
-                          >
-                            {(megamenuCategories && megamenuCategories.length > 0
-                              ? megamenuCategories.map(c => c.categoryQuery || c.title)
-                              : ['Business Stationery', 'Flyers & Leaflets', 'Signage & Banners', 'Packaging & Boxes', 'Corporate & Merch']
-                            ).map((catName, idx) => (
-                              <option key={idx} value={catName}>{catName}</option>
-                            ))}
-                          </select>
-                        )}
-                      </div>
-
-                      {/* Subcategory / Item Type Dropdown */}
-                      <div>
-                        <div className="flex items-center justify-between mb-1.5">
-                          <label className="block font-bold text-slate-700 uppercase text-[10px] tracking-wider">Subcategory / Item Type *</label>
-                          <button
-                            type="button"
-                            onClick={() => setShowInlineSubcatInput(!showInlineSubcatInput)}
-                            className="text-[10px] font-extrabold text-blue-600 hover:text-blue-800 bg-blue-50 px-2 py-0.5 rounded-lg flex items-center gap-1 cursor-pointer border-none"
-                          >
-                            <Plus className="w-3 h-3" /> Quick Add Subcategory
-                          </button>
-                        </div>
-
-                        {showInlineSubcatInput ? (
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="text"
-                              value={inlineSubcatInput}
-                              onChange={(e) => setInlineSubcatInput(e.target.value)}
-                              placeholder="e.g. Spot UV Cards"
-                              className="flex-1 p-2.5 rounded-xl border border-blue-400 font-semibold text-[14px] focus:outline-none focus:border-blue-600 bg-blue-50/50"
-                            />
-                            <button
-                              type="button"
-                              onClick={async () => {
-                                if (inlineSubcatInput.trim() && formData.category) {
-                                  const subName = inlineSubcatInput.trim();
-                                  const updatedCats = (megamenuCategories || []).map(c => {
-                                    if ((c.categoryQuery || c.title) === formData.category || c.title === formData.category) {
-                                      return {
-                                        ...c,
-                                        items: [...(c.items || []), { name: subName, search: subName, tag: 'Custom Spec' }]
-                                      };
-                                    }
-                                    return c;
-                                  });
-                                  if (updateMegamenuCategories) await updateMegamenuCategories(updatedCats);
-                                  setFormData({ ...formData, subcategory: subName });
-                                  setInlineSubcatInput('');
-                                  setShowInlineSubcatInput(false);
-                                }
-                              }}
-                              className="px-4 py-2.5 rounded-xl bg-blue-600 text-white font-extrabold text-[14px] hover:bg-blue-700 cursor-pointer border-none shrink-0 shadow-3xs"
-                            >
-                              Save
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setShowInlineSubcatInput(false)}
-                              className="px-2 py-2 text-slate-400 hover:text-slate-600 border-none bg-transparent cursor-pointer shrink-0"
-                            >
-                              ✕
-                            </button>
-                          </div>
-                        ) : (
-                          <select
-                            value={formData.subcategory || ''}
-                            onChange={(e) => setFormData({ ...formData, subcategory: e.target.value })}
-                            className="w-full p-3 rounded-xl border border-slate-200 font-bold text-slate-800 focus:outline-none focus:border-blue-500 bg-white text-[14px]"
-                          >
-                            <option value="">-- Select Subcategory (Optional) --</option>
-                            {((megamenuCategories || []).find(c => (c.categoryQuery || c.title) === formData.category || c.title === formData.category)?.items || []).map((sub, i) => (
-                              <option key={i} value={sub.name}>{sub.name}</option>
-                            ))}
-                          </select>
-                        )}
-                      </div>
-
-                      {/* Short Product Summary */}
-                      <div className="md:col-span-2">
-                        <label className="block font-bold text-slate-700 mb-1.5 uppercase text-[10px] tracking-wider">Short Product Summary *</label>
-                        <textarea
-                          rows={2}
-                          value={formData.summary}
-                          onChange={(e) => setFormData({ ...formData, summary: e.target.value })}
-                          className="w-full p-3 rounded-xl border border-slate-200 font-medium text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 text-[14px]"
-                          placeholder="Brief description visible on product cards..."
-                        />
-                      </div>
-
-                      {/* Orientation Picker */}
-                      <div>
-                        <label className="block font-bold text-slate-700 mb-2 uppercase text-[10px] tracking-wider flex items-center gap-1.5">
-                          <Maximize2 className="w-3.5 h-3.5 text-blue-500" /> Print Orientation
-                        </label>
-                        <div className="flex gap-3">
-                          <button
-                            type="button"
-                            onClick={() => setFormData({ ...formData, orientation: 'horizontal' })}
-                            className={`flex-1 flex flex-col items-center justify-center gap-2 p-3 rounded-2xl border-2 transition-all cursor-pointer font-extrabold text-[13px] ${
-                              formData.orientation === 'horizontal'
-                                ? 'border-blue-600 bg-blue-50 text-blue-700 shadow-sm'
-                                : 'border-slate-200 bg-white text-slate-600 hover:border-blue-300'
-                            }`}
-                          >
-                            <div className={`w-12 h-8 rounded-lg border-2 flex items-center justify-center ${
-                              formData.orientation === 'horizontal' ? 'border-blue-500 bg-blue-100' : 'border-slate-300 bg-slate-50'
-                            }`}>
-                              <AlignJustify className="w-5 h-4 text-blue-600" />
-                            </div>
-                            <span>Landscape</span>
-                            <span className="text-[10px] font-semibold text-slate-400">Width &gt; Height</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setFormData({ ...formData, orientation: 'vertical' })}
-                            className={`flex-1 flex flex-col items-center justify-center gap-2 p-3 rounded-2xl border-2 transition-all cursor-pointer font-extrabold text-[13px] ${
-                              formData.orientation === 'vertical'
-                                ? 'border-blue-600 bg-blue-50 text-blue-700 shadow-sm'
-                                : 'border-slate-200 bg-white text-slate-600 hover:border-blue-300'
-                            }`}
-                          >
-                            <div className={`w-8 h-12 rounded-lg border-2 flex items-center justify-center ${
-                              formData.orientation === 'vertical' ? 'border-blue-500 bg-blue-100' : 'border-slate-300 bg-slate-50'
-                            }`}>
-                              <AlignCenter className="w-4 h-5 text-blue-600" />
-                            </div>
-                            <span>Portrait</span>
-                            <span className="text-[10px] font-semibold text-slate-400">Height &gt; Width</span>
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Paper Sizes Multi-Select */}
-                      <div>
-                        <label className="block font-bold text-slate-700 mb-2 uppercase text-[10px] tracking-wider flex items-center gap-1.5">
-                          <FileText className="w-3.5 h-3.5 text-blue-500" /> Paper Sizes Supported
-                        </label>
-                        <div className="flex flex-wrap gap-2">
-                          {['A3', 'A4', 'A5', 'Letter', 'Legal', 'Custom'].map((size) => {
-                            const isSelected = (formData.paperSizes || []).includes(size);
-                            return (
-                              <button
-                                key={size}
-                                type="button"
-                                onClick={() => {
-                                  const current = formData.paperSizes || [];
-                                  const updated = isSelected
-                                    ? current.filter(s => s !== size)
-                                    : [...current, size];
-                                  setFormData({ ...formData, paperSizes: updated });
-                                }}
-                                className={`px-3.5 py-2 rounded-xl border-2 font-extrabold text-[13px] transition-all cursor-pointer flex items-center gap-1.5 ${
-                                  isSelected
-                                    ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
-                                    : 'bg-white text-slate-600 border-slate-200 hover:border-blue-400'
-                                }`}
-                              >
-                                <Tag className="w-3 h-3" />
-                                {size}
-                              </button>
-                            );
-                          })}
-                        </div>
-                        {(formData.paperSizes || []).length > 0 && (
-                          <p className="mt-2 text-[11px] text-slate-500 font-medium">
-                            Selected: <span className="font-bold text-blue-600">{(formData.paperSizes || []).join(', ')}</span>
-                          </p>
-                        )}
-                      </div>
-
                     </div>
-                  </div>
+                  )}
 
-                  {/* Technical Specifications Custom Key-Values Card */}
-                  <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-3xs space-y-4">
-                    <h4 className="font-extrabold text-slate-900 text-[14px] uppercase tracking-wider text-blue-600 flex items-center justify-between">
-                      <span>Technical Specifications & Custom Attributes</span>
-                    </h4>
+                  {/* Technical Specifications Section */}
+                  <TechSpecsSection
+                    formData={formData}
+                    setFormData={setFormData}
+                    newSpecKey={newSpecKey}
+                    setNewSpecKey={setNewSpecKey}
+                    newSpecVal={newSpecVal}
+                    setNewSpecVal={setNewSpecVal}
+                  />
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {Object.entries(formData.specs || {}).map(([key, val]) => (
-                        <div key={key} className="flex items-center gap-2 p-2 rounded-xl bg-slate-50 border border-slate-200">
-                          <input
-                            type="text"
-                            value={key}
-                            readOnly
-                            className="w-1/3 p-2 rounded-lg bg-slate-100 font-bold text-slate-700 text-[13px] border border-slate-200 uppercase"
-                          />
-                          <input
-                            type="text"
-                            value={val}
-                            onChange={(e) => {
-                              const updated = { ...formData.specs, [key]: e.target.value };
-                              setFormData({ ...formData, specs: updated });
-                            }}
-                            className="flex-1 p-2 rounded-lg bg-white font-bold text-slate-900 text-[13px] border border-slate-200 focus:outline-none focus:border-blue-500"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const updated = { ...formData.specs };
-                              delete updated[key];
-                              setFormData({ ...formData, specs: updated });
-                            }}
-                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg border-none bg-transparent cursor-pointer"
-                            title="Remove attribute"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Add Custom Spec Row */}
-                    <div className="flex items-center gap-2 pt-2 border-t border-dashed border-slate-200">
-                      <input
-                        type="text"
-                        value={newSpecKey}
-                        onChange={(e) => setNewSpecKey(e.target.value)}
-                        placeholder="Spec Name (e.g. turnaround)"
-                        className="w-1/3 p-2 rounded-xl border border-slate-200 font-bold text-[13px] focus:outline-none focus:border-blue-500"
-                      />
-                      <input
-                        type="text"
-                        value={newSpecVal}
-                        onChange={(e) => setNewSpecVal(e.target.value)}
-                        placeholder="Spec Value (e.g. 24 Hours)"
-                        className="flex-1 p-2 rounded-xl border border-slate-200 font-bold text-[13px] focus:outline-none focus:border-blue-500"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (newSpecKey.trim() && newSpecVal.trim()) {
-                            setFormData({
-                              ...formData,
-                              specs: { ...formData.specs, [newSpecKey.trim()]: newSpecVal.trim() }
-                            });
-                            setNewSpecKey('');
-                            setNewSpecVal('');
-                          }
-                        }}
-                        className="px-4 py-2 rounded-xl bg-blue-600 text-white font-extrabold text-[13px] hover:bg-blue-700 cursor-pointer border-none shadow-3xs"
-                      >
-                        Add Spec
-                      </button>
-                    </div>
-                  </div>
+                  {/* Dynamic Custom Printing Engines */}
+                  <NcrEngineSection formData={formData} setFormData={setFormData} />
+                  <VisitingCardEngineSection formData={formData} setFormData={setFormData} />
+                  <BrochureEngineSection formData={formData} setFormData={setFormData} />
+                  <StickerEngineSection formData={formData} setFormData={setFormData} />
+                  <AreaCalcEngineSection formData={formData} setFormData={setFormData} />
 
                   {/* Media Gallery Upload */}
                   <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-3xs space-y-3">
@@ -1242,85 +1049,10 @@ export const ProductCatalogManager = () => {
 
               {/* TAB 2: TIERED QUANTITY PRICING GRID */}
               {formActiveTab === 'tiered' && (
-                <div className="space-y-4 animate-in fade-in duration-150">
-                  <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-3xs space-y-4">
-                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                      <div>
-                        <h4 className="font-extrabold text-slate-900 text-[14px] uppercase tracking-wider text-blue-600 flex items-center gap-2">
-                          <DollarSign className="w-4 h-4" /> Volume Quantity Discount Matrix
-                        </h4>
-                        <p className="text-[13px] text-slate-500 mt-0.5">Automatically calculates tiered discounts based on order quantity threshold</p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const currentTiers = formData.tieredPricing || [];
-                          const lastMin = currentTiers.length > 0 ? currentTiers[currentTiers.length - 1].tierMin + 500 : 500;
-                          const lastPrice = currentTiers.length > 0 ? Math.max(currentTiers[currentTiers.length - 1].pricePerUnit - 0.5, 1) : 4.0;
-                          setFormData({
-                            ...formData,
-                            tieredPricing: [...currentTiers, { tierMin: lastMin, pricePerUnit: lastPrice }]
-                          });
-                        }}
-                        className="px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-600 font-extrabold text-[13px] flex items-center gap-1.5 border border-blue-200 cursor-pointer shadow-3xs"
-                      >
-                        <Plus className="w-3.5 h-3.5" /> Add Tier Rule
-                      </button>
-                    </div>
-
-                    <div className="space-y-2">
-                      <div className="grid grid-cols-12 gap-3 px-3 py-2 bg-slate-100/70 rounded-xl text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">
-                        <span className="col-span-5">Minimum Quantity (pcs)</span>
-                        <span className="col-span-5">Price Per Unit (₹)</span>
-                        <span className="col-span-2 text-right">Action</span>
-                      </div>
-
-                      {formData.tieredPricing.map((tier, idx) => (
-                        <div key={idx} className="grid grid-cols-12 gap-3 items-center p-2 rounded-xl bg-slate-50 border border-slate-200 hover:border-slate-300 transition">
-                          <div className="col-span-5">
-                            <input
-                              type="number"
-                              min="1"
-                              value={tier.tierMin}
-                              onChange={(e) => {
-                                const newTiers = [...formData.tieredPricing];
-                                newTiers[idx].tierMin = parseInt(e.target.value) || 1;
-                                setFormData({ ...formData, tieredPricing: newTiers });
-                              }}
-                              className="w-full p-2 rounded-lg border border-slate-200 bg-white font-bold text-slate-900 text-[14px] focus:outline-none focus:border-blue-500"
-                            />
-                          </div>
-                          <div className="col-span-5">
-                            <input
-                              type="number"
-                              step="0.01"
-                              value={tier.pricePerUnit}
-                              onChange={(e) => {
-                                const newTiers = [...formData.tieredPricing];
-                                newTiers[idx].pricePerUnit = parseFloat(e.target.value) || 0;
-                                setFormData({ ...formData, tieredPricing: newTiers });
-                              }}
-                              className="w-full p-2 rounded-lg border border-slate-200 bg-white font-bold text-slate-900 text-[14px] focus:outline-none focus:border-blue-500"
-                            />
-                          </div>
-                          <div className="col-span-2 text-right">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const newTiers = formData.tieredPricing.filter((_, i) => i !== idx);
-                                setFormData({ ...formData, tieredPricing: newTiers });
-                              }}
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition border-none bg-transparent cursor-pointer"
-                              title="Delete Tier"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
+                <TieredPricingSection
+                  formData={formData}
+                  setFormData={setFormData}
+                />
               )}
 
               {/* TAB 3: PRINT OPTIONS & FINISHES MATRIX (12 SECTIONS) */}

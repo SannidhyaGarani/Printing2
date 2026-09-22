@@ -70,7 +70,24 @@ export function SearchModal({ isOpen, onClose, onSelectProduct, onNavigateSearch
         const titleMatch = (p.title || p.name || '').toLowerCase().includes(trimmed);
         const categoryMatch = (p.category || '').toLowerCase().includes(trimmed);
         const descMatch = (p.description || '').toLowerCase().includes(trimmed);
-        return titleMatch || categoryMatch || descMatch;
+        const aliasMatch = (p.searchAliases || []).some(alias => alias.toLowerCase().includes(trimmed));
+
+        // Built-in Vernacular Alias Fallbacks
+        let vernacularMatch = false;
+        if (trimmed.includes('parcha') || trimmed.includes('pamplet') || trimmed.includes('pamphlet') || trimmed.includes('leaflet')) {
+          if ((p.title + p.category).toLowerCase().includes('flyer') || (p.title + p.category).toLowerCase().includes('leaflet')) vernacularMatch = true;
+        }
+        if (trimmed.includes('rasid') || trimmed.includes('receipt') || trimmed.includes('challan') || trimmed.includes('invoice')) {
+          if ((p.title + p.category).toLowerCase().includes('bill') || (p.title + p.category).toLowerCase().includes('book')) vernacularMatch = true;
+        }
+        if (trimmed.includes('flex') || trimmed.includes('banner') || trimmed.includes('hoarding')) {
+          if ((p.title + p.category).toLowerCase().includes('banner') || (p.title + p.category).toLowerCase().includes('flex')) vernacularMatch = true;
+        }
+        if (trimmed.includes('visiting')) {
+          if ((p.title + p.category).toLowerCase().includes('card')) vernacularMatch = true;
+        }
+
+        return titleMatch || categoryMatch || descMatch || aliasMatch || vernacularMatch;
       })
     : [];
 
