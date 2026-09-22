@@ -30,6 +30,8 @@ import { BrochureEngineSection } from './sections/BrochureEngineSection';
 import { StickerEngineSection } from './sections/StickerEngineSection';
 import { AreaCalcEngineSection } from './sections/AreaCalcEngineSection';
 import { TieredPricingSection } from './sections/TieredPricingSection';
+import { DynamicFormBuilder } from './sections/DynamicFormBuilder';
+import { ensureCustomSections, PRESET_CUSTOM_SECTIONS } from '../../../utils/customSectionsHelper';
 
 // ============================================================================
 // Top-Level Component: VariantSectionCard
@@ -362,6 +364,7 @@ export const ProductCatalogManager = () => {
       enableStickerEngine: false,
       searchAliases: ['stationery', 'custom print'],
       relatedProductIds: [],
+      customSections: PRESET_CUSTOM_SECTIONS.businessCard,
       specs: {
         paperGsm: '350 GSM',
         dimensions: '91mm x 53mm',
@@ -412,6 +415,7 @@ export const ProductCatalogManager = () => {
       enableStickerEngine: prod.enableStickerEngine ?? false,
       searchAliases: prod.searchAliases || [],
       relatedProductIds: prod.relatedProductIds || [],
+      customSections: ensureCustomSections(prod),
       specs: prod.specs || { paperGsm: '350 GSM', dimensions: '91mm x 53mm', printTech: 'Offset Litho', turnaround: '24 Hours' },
       variants: {
         paperStock: prod.variants?.paperStock ?? catalogOptions?.paperStock ?? DEFAULT_CATALOG_OPTIONS.paperStock,
@@ -960,12 +964,28 @@ export const ProductCatalogManager = () => {
                     setFormData={setFormData}
                   />
 
+                  {/* DYNAMIC PRODUCT FORM BUILDER & SECTION CUSTOMIZER */}
+                  <DynamicFormBuilder
+                    customSections={formData.customSections || []}
+                    onChange={(updatedSections) => setFormData({ ...formData, customSections: updatedSections })}
+                  />
+
                   {/* Optional Orientation & Paper Sizes Card */}
                   {(formData.enableOrientation !== false || formData.enablePaperSizes !== false) && (
                     <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-3xs space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <OrientationSection formData={formData} setFormData={setFormData} />
-                        <PaperSizesSection formData={formData} setFormData={setFormData} />
+                        <OrientationSection
+                          formData={formData}
+                          setFormData={setFormData}
+                          catalogOptions={catalogOptions}
+                          updateCatalogOptions={updateCatalogOptions}
+                        />
+                        <PaperSizesSection
+                          formData={formData}
+                          setFormData={setFormData}
+                          catalogOptions={catalogOptions}
+                          updateCatalogOptions={updateCatalogOptions}
+                        />
                       </div>
                     </div>
                   )}
@@ -978,14 +998,41 @@ export const ProductCatalogManager = () => {
                     setNewSpecKey={setNewSpecKey}
                     newSpecVal={newSpecVal}
                     setNewSpecVal={setNewSpecVal}
+                    catalogOptions={catalogOptions}
+                    updateCatalogOptions={updateCatalogOptions}
                   />
 
                   {/* Dynamic Custom Printing Engines */}
-                  <NcrEngineSection formData={formData} setFormData={setFormData} />
-                  <VisitingCardEngineSection formData={formData} setFormData={setFormData} />
-                  <BrochureEngineSection formData={formData} setFormData={setFormData} />
-                  <StickerEngineSection formData={formData} setFormData={setFormData} />
-                  <AreaCalcEngineSection formData={formData} setFormData={setFormData} />
+                  <NcrEngineSection
+                    formData={formData}
+                    setFormData={setFormData}
+                    catalogOptions={catalogOptions}
+                    updateCatalogOptions={updateCatalogOptions}
+                  />
+                  <VisitingCardEngineSection
+                    formData={formData}
+                    setFormData={setFormData}
+                    catalogOptions={catalogOptions}
+                    updateCatalogOptions={updateCatalogOptions}
+                  />
+                  <BrochureEngineSection
+                    formData={formData}
+                    setFormData={setFormData}
+                    catalogOptions={catalogOptions}
+                    updateCatalogOptions={updateCatalogOptions}
+                  />
+                  <StickerEngineSection
+                    formData={formData}
+                    setFormData={setFormData}
+                    catalogOptions={catalogOptions}
+                    updateCatalogOptions={updateCatalogOptions}
+                  />
+                  <AreaCalcEngineSection
+                    formData={formData}
+                    setFormData={setFormData}
+                    catalogOptions={catalogOptions}
+                    updateCatalogOptions={updateCatalogOptions}
+                  />
 
                   {/* Media Gallery Upload */}
                   <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-3xs space-y-3">

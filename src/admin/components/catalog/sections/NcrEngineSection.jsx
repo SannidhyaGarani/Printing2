@@ -1,22 +1,104 @@
 import React from 'react';
-import { FileSpreadsheet, Check } from 'lucide-react';
+import { FileSpreadsheet } from 'lucide-react';
+import { CustomDropdownSelect } from './CustomDropdownSelect';
 
-export const NcrEngineSection = ({ formData, setFormData }) => {
+export const NcrEngineSection = ({ formData, setFormData, catalogOptions, updateCatalogOptions }) => {
   if (!formData.enableNcrEngine) return null;
 
   const ncrConfig = formData.ncrConfig || {
-    parts: 'Duplicate (2-Part)',
-    paperColors: 'Top White, Bottom Pink',
+    parts: 'Duplicate (1 + 1 = 2 Parts)',
+    paperColors: 'Top White / Bottom Pink (Standard 2-Part)',
     numbering: true,
     startNumber: 1001,
-    binding: 'Stapled & Perforated Book'
+    binding: 'Stapled Book + Perforation + Craft Cover'
   };
+
+  const defaultParts = [
+    'Duplicate (1 + 1 = 2 Parts)',
+    'Triplicate (1 + 2 = 3 Parts)',
+    'Quadruplicate (1 + 3 = 4 Parts)'
+  ];
+
+  const defaultPaperColors = [
+    'Top White / Bottom Pink (Standard 2-Part)',
+    'Top White / Bottom Yellow',
+    'Top White / Middle Pink / Bottom Yellow (3-Part)',
+    'Top White / Pink / Yellow / Blue (4-Part)'
+  ];
+
+  const defaultBindingOptions = [
+    { name: 'Stapled Book + Perforation + Craft Cover', price: 0 },
+    { name: 'Pad Binding (Top Glued Tear-Off)', price: 15 },
+    { name: 'Loose Sets Pack (Unbound)', price: 0 }
+  ];
+
+  const partsOptions = catalogOptions?.ncrPartsOptions || defaultParts;
+  const paperColorsOptions = catalogOptions?.ncrPaperColorsOptions || defaultPaperColors;
+  const bindingOptions = catalogOptions?.ncrBindingOptions || defaultBindingOptions;
 
   const updateNcr = (key, val) => {
     setFormData({
       ...formData,
       ncrConfig: { ...ncrConfig, [key]: val }
     });
+  };
+
+  // 1. Handlers for Copy Parts / Sets
+  const handleAddPartsOption = (newName) => {
+    const updated = [...partsOptions, newName];
+    if (updateCatalogOptions && catalogOptions) {
+      updateCatalogOptions({ ...catalogOptions, ncrPartsOptions: updated });
+    }
+  };
+
+  const handleDeletePartsOption = (optToDelete) => {
+    const updated = partsOptions.filter(o => o !== optToDelete);
+    if (updateCatalogOptions && catalogOptions) {
+      updateCatalogOptions({ ...catalogOptions, ncrPartsOptions: updated });
+    }
+  };
+
+  // 2. Handlers for Paper Color Sequence
+  const handleAddColorOption = (newName) => {
+    const updated = [...paperColorsOptions, newName];
+    if (updateCatalogOptions && catalogOptions) {
+      updateCatalogOptions({ ...catalogOptions, ncrPaperColorsOptions: updated });
+    }
+  };
+
+  const handleDeleteColorOption = (optToDelete) => {
+    const updated = paperColorsOptions.filter(o => o !== optToDelete);
+    if (updateCatalogOptions && catalogOptions) {
+      updateCatalogOptions({ ...catalogOptions, ncrPaperColorsOptions: updated });
+    }
+  };
+
+  // 3. Handlers for Binding & Book Finish (Requirement 3: Custom Prices!)
+  const handleAddBindingOption = (newName, newPrice) => {
+    const updated = [...bindingOptions, { name: newName, price: newPrice }];
+    if (updateCatalogOptions && catalogOptions) {
+      updateCatalogOptions({ ...catalogOptions, ncrBindingOptions: updated });
+    }
+  };
+
+  const handleDeleteBindingOption = (optToDelete) => {
+    const updated = bindingOptions.filter(o => (typeof o === 'string' ? o !== optToDelete : o.name !== optToDelete));
+    if (updateCatalogOptions && catalogOptions) {
+      updateCatalogOptions({ ...catalogOptions, ncrBindingOptions: updated });
+    }
+  };
+
+  const handleUpdateBindingPrice = (optName, newPrice) => {
+    const updated = bindingOptions.map(o => {
+      const name = typeof o === 'string' ? o : o.name;
+      if (name === optName) {
+        return { name, price: newPrice };
+      }
+      return typeof o === 'string' ? { name: o, price: 0 } : o;
+    });
+    if (updateCatalogOptions && catalogOptions) {
+      updateCatalogOptions({ ...catalogOptions, ncrBindingOptions: updated });
+    }
   };
 
   return (
@@ -32,46 +114,38 @@ export const NcrEngineSection = ({ formData, setFormData }) => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="block font-bold text-slate-700 mb-1.5 uppercase text-[10px] tracking-wider">
-            Copy Parts / Sets
-          </label>
-          <select
-            value={ncrConfig.parts}
-            onChange={(e) => updateNcr('parts', e.target.value)}
-            className="w-full p-2.5 rounded-xl border border-emerald-300 font-bold text-slate-800 text-[13.5px] bg-white focus:outline-none focus:border-emerald-600"
-          >
-            <option value="Duplicate (2-Part)">Duplicate (1 + 1 = 2 Parts)</option>
-            <option value="Triplicate (3-Part)">Triplicate (1 + 2 = 3 Parts)</option>
-            <option value="Quadruplicate (4-Part)">Quadruplicate (1 + 3 = 4 Parts)</option>
-          </select>
-        </div>
+        {/* Copy Parts / Sets */}
+        <CustomDropdownSelect
+          label="Copy Parts / Sets"
+          value={ncrConfig.parts}
+          options={partsOptions}
+          onChange={(val) => updateNcr('parts', val)}
+          onAddOption={handleAddPartsOption}
+          onDeleteOption={handleDeletePartsOption}
+          placeholder="e.g. Quintruplicate (5-Part)"
+        />
 
-        <div>
-          <label className="block font-bold text-slate-700 mb-1.5 uppercase text-[10px] tracking-wider">
-            Paper Color Sequence
-          </label>
-          <select
-            value={ncrConfig.paperColors}
-            onChange={(e) => updateNcr('paperColors', e.target.value)}
-            className="w-full p-2.5 rounded-xl border border-emerald-300 font-bold text-slate-800 text-[13.5px] bg-white focus:outline-none focus:border-emerald-600"
-          >
-            <option value="Top White, Bottom Pink">Top White / Bottom Pink (Standard 2-Part)</option>
-            <option value="Top White, Bottom Yellow">Top White / Bottom Yellow</option>
-            <option value="Top White, Middle Pink, Bottom Yellow">Top White / Middle Pink / Bottom Yellow (3-Part)</option>
-            <option value="Top White, Pink, Yellow, Blue">Top White / Pink / Yellow / Blue (4-Part)</option>
-          </select>
-        </div>
+        {/* Paper Color Sequence */}
+        <CustomDropdownSelect
+          label="Paper Color Sequence"
+          value={ncrConfig.paperColors}
+          options={paperColorsOptions}
+          onChange={(val) => updateNcr('paperColors', val)}
+          onAddOption={handleAddColorOption}
+          onDeleteOption={handleDeleteColorOption}
+          placeholder="e.g. Top White / Middle Pink / Bottom Green"
+        />
 
+        {/* Sequential Serial Numbering */}
         <div>
           <label className="block font-bold text-slate-700 mb-1.5 uppercase text-[10px] tracking-wider">
             Sequential Serial Numbering
           </label>
-          <div className="flex items-center gap-3 bg-white p-2 rounded-xl border border-emerald-200">
+          <div className="flex items-center gap-3 bg-white p-2.5 rounded-xl border border-emerald-300">
             <button
               type="button"
               onClick={() => updateNcr('numbering', !ncrConfig.numbering)}
-              className={`px-3 py-1 rounded-lg text-[12px] font-bold border cursor-pointer transition ${
+              className={`px-3 py-1.5 rounded-lg text-[12px] font-bold border cursor-pointer transition ${
                 ncrConfig.numbering
                   ? 'bg-emerald-600 text-white border-emerald-600'
                   : 'bg-slate-100 text-slate-500 border-slate-200'
@@ -93,20 +167,18 @@ export const NcrEngineSection = ({ formData, setFormData }) => {
           </div>
         </div>
 
-        <div>
-          <label className="block font-bold text-slate-700 mb-1.5 uppercase text-[10px] tracking-wider">
-            Binding & Book Finish
-          </label>
-          <select
-            value={ncrConfig.binding}
-            onChange={(e) => updateNcr('binding', e.target.value)}
-            className="w-full p-2.5 rounded-xl border border-emerald-300 font-bold text-slate-800 text-[13.5px] bg-white focus:outline-none focus:border-emerald-600"
-          >
-            <option value="Stapled & Perforated Book">Stapled Book + Perforation + Craft Cover</option>
-            <option value="Pad Binding (Top Glue)">Pad Binding (Top Glued Tear-Off)</option>
-            <option value="Loose Sets in Pack">Loose Sets Pack (Unbound)</option>
-          </select>
-        </div>
+        {/* Binding & Book Finish (Requirement 3: Custom Prices!) */}
+        <CustomDropdownSelect
+          label="Binding & Book Finish"
+          value={ncrConfig.binding}
+          options={bindingOptions}
+          onChange={(val) => updateNcr('binding', val)}
+          onAddOption={handleAddBindingOption}
+          onDeleteOption={handleDeleteBindingOption}
+          onUpdatePrice={handleUpdateBindingPrice}
+          allowPrice={true}
+          placeholder="e.g. Hardbound Book Binding + Perforation"
+        />
       </div>
     </div>
   );

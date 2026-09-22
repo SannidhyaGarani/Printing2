@@ -1,7 +1,8 @@
 import React from 'react';
 import { Maximize2, Calculator } from 'lucide-react';
+import { CustomDropdownSelect } from './CustomDropdownSelect';
 
-export const AreaCalcEngineSection = ({ formData, setFormData }) => {
+export const AreaCalcEngineSection = ({ formData, setFormData, catalogOptions, updateCatalogOptions }) => {
   if (!formData.enableCustomArea) return null;
 
   const areaConfig = formData.areaConfig || {
@@ -13,11 +14,36 @@ export const AreaCalcEngineSection = ({ formData, setFormData }) => {
     eyeletGrommets: true
   };
 
+  const defaultUnits = [
+    'Feet (ft)',
+    'Inches (in)',
+    'Millimeters (mm)',
+    'Meters (m)',
+    'Centimeters (cm)'
+  ];
+
+  const unitsOptions = catalogOptions?.areaUnitsOptions || defaultUnits;
+
   const updateArea = (key, val) => {
     setFormData({
       ...formData,
       areaConfig: { ...areaConfig, [key]: val }
     });
+  };
+
+  // Measurement Unit Handlers
+  const handleAddUnit = (newName) => {
+    const updated = [...unitsOptions, newName];
+    if (updateCatalogOptions && catalogOptions) {
+      updateCatalogOptions({ ...catalogOptions, areaUnitsOptions: updated });
+    }
+  };
+
+  const handleDeleteUnit = (optToDelete) => {
+    const updated = unitsOptions.filter(o => o !== optToDelete);
+    if (updateCatalogOptions && catalogOptions) {
+      updateCatalogOptions({ ...catalogOptions, areaUnitsOptions: updated });
+    }
   };
 
   return (
@@ -59,20 +85,16 @@ export const AreaCalcEngineSection = ({ formData, setFormData }) => {
           />
         </div>
 
-        <div>
-          <label className="block font-bold text-slate-700 mb-1.5 uppercase text-[10px] tracking-wider">
-            Measurement Unit
-          </label>
-          <select
-            value={areaConfig.unit}
-            onChange={(e) => updateArea('unit', e.target.value)}
-            className="w-full p-2.5 rounded-xl border border-orange-300 font-bold text-slate-800 text-[13.5px] bg-white focus:outline-none focus:border-orange-600"
-          >
-            <option value="ft">Feet (ft)</option>
-            <option value="inch">Inches (in)</option>
-            <option value="mm">Millimeters (mm)</option>
-          </select>
-        </div>
+        {/* Measurement Unit */}
+        <CustomDropdownSelect
+          label="Measurement Unit"
+          value={areaConfig.unit}
+          options={unitsOptions}
+          onChange={(val) => updateArea('unit', val)}
+          onAddOption={handleAddUnit}
+          onDeleteOption={handleDeleteUnit}
+          placeholder="e.g. Yards (yd)"
+        />
 
         <div>
           <label className="block font-bold text-slate-700 mb-1.5 uppercase text-[10px] tracking-wider">

@@ -1,21 +1,90 @@
 import React from 'react';
 import { Tag, Sparkles } from 'lucide-react';
+import { CustomDropdownSelect } from './CustomDropdownSelect';
 
-export const StickerEngineSection = ({ formData, setFormData }) => {
+export const StickerEngineSection = ({ formData, setFormData, catalogOptions, updateCatalogOptions }) => {
   if (!formData.enableStickerEngine) return null;
 
   const stickerConfig = formData.stickerConfig || {
-    inkType: 'White Ink Underprint',
+    inkType: 'White Vinyl Standard',
     cutType: 'Custom Die-Cut Single',
     whiteInkMode: 'Underprint Layer + Full CMYK Color',
     borderMarginMm: 2
   };
+
+  const defaultInkTypes = [
+    'White Vinyl Vinyl (Standard Full Color)',
+    'Clear Transparent Vinyl (Requires White Ink)',
+    'Holographic Rainbow Foil Vinyl',
+    'Metallic Gold / Silver Vinyl'
+  ];
+
+  const defaultCutTypes = [
+    'Custom Die-Cut Single Stickers (Individually Cut)',
+    'Kiss-Cut Sticker Sheet (Multiple on A4/A5 Sheet)',
+    'Roll Labels (For Packaging Machines)'
+  ];
+
+  const defaultWhiteInkModes = [
+    'White Underprint Layer + CMYK Color (Opaque Color)',
+    'White Ink Only (Pure White Artwork on Clear)',
+    'Selective White Mask (Transparent Windows in Art)'
+  ];
+
+  const inkTypesOptions = catalogOptions?.stickerInkTypesOptions || defaultInkTypes;
+  const cutTypesOptions = catalogOptions?.stickerCutTypesOptions || defaultCutTypes;
+  const whiteInkModesOptions = catalogOptions?.stickerWhiteInkModesOptions || defaultWhiteInkModes;
 
   const updateSticker = (key, val) => {
     setFormData({
       ...formData,
       stickerConfig: { ...stickerConfig, [key]: val }
     });
+  };
+
+  // Material & Ink Type Handlers
+  const handleAddInkType = (newName) => {
+    const updated = [...inkTypesOptions, newName];
+    if (updateCatalogOptions && catalogOptions) {
+      updateCatalogOptions({ ...catalogOptions, stickerInkTypesOptions: updated });
+    }
+  };
+
+  const handleDeleteInkType = (optToDelete) => {
+    const updated = inkTypesOptions.filter(o => o !== optToDelete);
+    if (updateCatalogOptions && catalogOptions) {
+      updateCatalogOptions({ ...catalogOptions, stickerInkTypesOptions: updated });
+    }
+  };
+
+  // Cut Type Handlers
+  const handleAddCutType = (newName) => {
+    const updated = [...cutTypesOptions, newName];
+    if (updateCatalogOptions && catalogOptions) {
+      updateCatalogOptions({ ...catalogOptions, stickerCutTypesOptions: updated });
+    }
+  };
+
+  const handleDeleteCutType = (optToDelete) => {
+    const updated = cutTypesOptions.filter(o => o !== optToDelete);
+    if (updateCatalogOptions && catalogOptions) {
+      updateCatalogOptions({ ...catalogOptions, stickerCutTypesOptions: updated });
+    }
+  };
+
+  // White Ink Mode Handlers
+  const handleAddWhiteInkMode = (newName) => {
+    const updated = [...whiteInkModesOptions, newName];
+    if (updateCatalogOptions && catalogOptions) {
+      updateCatalogOptions({ ...catalogOptions, stickerWhiteInkModesOptions: updated });
+    }
+  };
+
+  const handleDeleteWhiteInkMode = (optToDelete) => {
+    const updated = whiteInkModesOptions.filter(o => o !== optToDelete);
+    if (updateCatalogOptions && catalogOptions) {
+      updateCatalogOptions({ ...catalogOptions, stickerWhiteInkModesOptions: updated });
+    }
   };
 
   return (
@@ -31,51 +100,38 @@ export const StickerEngineSection = ({ formData, setFormData }) => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="block font-bold text-slate-700 mb-1.5 uppercase text-[10px] tracking-wider">
-            Sticker Material & Ink Type
-          </label>
-          <select
-            value={stickerConfig.inkType}
-            onChange={(e) => updateSticker('inkType', e.target.value)}
-            className="w-full p-2.5 rounded-xl border border-amber-300 font-bold text-slate-800 text-[13.5px] bg-white focus:outline-none focus:border-amber-600"
-          >
-            <option value="White Vinyl Standard">White Vinyl Vinyl (Standard Full Color)</option>
-            <option value="Clear Transparent Vinyl">Clear Transparent Vinyl (Requires White Ink)</option>
-            <option value="Holographic Foil Vinyl">Holographic Rainbow Foil Vinyl</option>
-            <option value="Metallic Gold Vinyl">Metallic Gold / Silver Vinyl</option>
-          </select>
-        </div>
+        {/* Sticker Material & Ink Type */}
+        <CustomDropdownSelect
+          label="Sticker Material & Ink Type"
+          value={stickerConfig.inkType}
+          options={inkTypesOptions}
+          onChange={(val) => updateSticker('inkType', val)}
+          onAddOption={handleAddInkType}
+          onDeleteOption={handleDeleteInkType}
+          placeholder="e.g. Heavy-Duty Bumper Vinyl"
+        />
 
-        <div>
-          <label className="block font-bold text-slate-700 mb-1.5 uppercase text-[10px] tracking-wider">
-            Die-Cut Format & Sheet Option
-          </label>
-          <select
-            value={stickerConfig.cutType}
-            onChange={(e) => updateSticker('cutType', e.target.value)}
-            className="w-full p-2.5 rounded-xl border border-amber-300 font-bold text-slate-800 text-[13.5px] bg-white focus:outline-none focus:border-amber-600"
-          >
-            <option value="Custom Die-Cut Single">Custom Die-Cut Single Stickers (Individually Cut)</option>
-            <option value="Kiss-Cut Sheet (Peel-Off)">Kiss-Cut Sticker Sheet (Multiple on A4/A5 Sheet)</option>
-            <option value="Roll Format (Machine Label)">Roll Labels (For Packaging Machines)</option>
-          </select>
-        </div>
+        {/* Die-Cut Format & Sheet Option */}
+        <CustomDropdownSelect
+          label="Die-Cut Format & Sheet Option"
+          value={stickerConfig.cutType}
+          options={cutTypesOptions}
+          onChange={(val) => updateSticker('cutType', val)}
+          onAddOption={handleAddCutType}
+          onDeleteOption={handleDeleteCutType}
+          placeholder="e.g. Perforated Backing Sheet"
+        />
 
-        <div>
-          <label className="block font-bold text-slate-700 mb-1.5 uppercase text-[10px] tracking-wider">
-            White Ink Mode Options
-          </label>
-          <select
-            value={stickerConfig.whiteInkMode}
-            onChange={(e) => updateSticker('whiteInkMode', e.target.value)}
-            className="w-full p-2.5 rounded-xl border border-amber-300 font-bold text-slate-800 text-[13.5px] bg-white focus:outline-none focus:border-amber-600"
-          >
-            <option value="Underprint Layer + Full CMYK Color">White Underprint Layer + CMYK Color (Opaque Color)</option>
-            <option value="White Ink Only (Monochrome White)">White Ink Only (Pure White Artwork on Clear)</option>
-            <option value="Selective White Mask">Selective White Mask (Transparent Windows in Art)</option>
-          </select>
-        </div>
+        {/* White Ink Mode Options */}
+        <CustomDropdownSelect
+          label="White Ink Mode Options"
+          value={stickerConfig.whiteInkMode}
+          options={whiteInkModesOptions}
+          onChange={(val) => updateSticker('whiteInkMode', val)}
+          onAddOption={handleAddWhiteInkMode}
+          onDeleteOption={handleDeleteWhiteInkMode}
+          placeholder="e.g. Double Strike White Ink Layer"
+        />
 
         <div>
           <label className="block font-bold text-slate-700 mb-1.5 uppercase text-[10px] tracking-wider">

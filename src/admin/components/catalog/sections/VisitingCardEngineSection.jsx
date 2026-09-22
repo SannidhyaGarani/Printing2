@@ -1,7 +1,8 @@
 import React from 'react';
 import { CreditCard, Sparkles } from 'lucide-react';
+import { CustomDropdownSelect } from './CustomDropdownSelect';
 
-export const VisitingCardEngineSection = ({ formData, setFormData }) => {
+export const VisitingCardEngineSection = ({ formData, setFormData, catalogOptions, updateCatalogOptions }) => {
   if (!formData.enableVisitingCardEngine) return null;
 
   const cardConfig = formData.visitingCardConfig || {
@@ -11,11 +12,57 @@ export const VisitingCardEngineSection = ({ formData, setFormData }) => {
     presetDimensions: '89mm x 51mm (Standard India)'
   };
 
+  const defaultDimensions = [
+    'Standard India (89mm x 51mm / 3.5" x 2.0")',
+    'Euro Standard (90mm x 55mm)',
+    'Square Card (60mm x 60mm)'
+  ];
+
+  const defaultCorners = [
+    'Standard Square Corners (90° Sharp)',
+    'Round 4 Corners (3mm Radius)',
+    'Round 4 Corners (6mm Radius)',
+    'Diagonal Cut / Custom Shape Die'
+  ];
+
+  const dimensionsOptions = catalogOptions?.visitingCardDimensionsOptions || defaultDimensions;
+  const cornerOptions = catalogOptions?.visitingCardCornerStylesOptions || defaultCorners;
+
   const updateCard = (key, val) => {
     setFormData({
       ...formData,
       visitingCardConfig: { ...cardConfig, [key]: val }
     });
+  };
+
+  // Dimensions Handlers
+  const handleAddDimension = (newName) => {
+    const updated = [...dimensionsOptions, newName];
+    if (updateCatalogOptions && catalogOptions) {
+      updateCatalogOptions({ ...catalogOptions, visitingCardDimensionsOptions: updated });
+    }
+  };
+
+  const handleDeleteDimension = (optToDelete) => {
+    const updated = dimensionsOptions.filter(o => o !== optToDelete);
+    if (updateCatalogOptions && catalogOptions) {
+      updateCatalogOptions({ ...catalogOptions, visitingCardDimensionsOptions: updated });
+    }
+  };
+
+  // Corner Cut Handlers
+  const handleAddCorner = (newName) => {
+    const updated = [...cornerOptions, newName];
+    if (updateCatalogOptions && catalogOptions) {
+      updateCatalogOptions({ ...catalogOptions, visitingCardCornerStylesOptions: updated });
+    }
+  };
+
+  const handleDeleteCorner = (optToDelete) => {
+    const updated = cornerOptions.filter(o => o !== optToDelete);
+    if (updateCatalogOptions && catalogOptions) {
+      updateCatalogOptions({ ...catalogOptions, visitingCardCornerStylesOptions: updated });
+    }
   };
 
   return (
@@ -31,36 +78,27 @@ export const VisitingCardEngineSection = ({ formData, setFormData }) => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="block font-bold text-slate-700 mb-1.5 uppercase text-[10px] tracking-wider">
-            Standard Card Dimensions
-          </label>
-          <select
-            value={cardConfig.presetDimensions}
-            onChange={(e) => updateCard('presetDimensions', e.target.value)}
-            className="w-full p-2.5 rounded-xl border border-purple-300 font-bold text-slate-800 text-[13.5px] bg-white focus:outline-none focus:border-purple-600"
-          >
-            <option value="89mm x 51mm (Standard India)">Standard India (89mm x 51mm / 3.5" x 2.0")</option>
-            <option value="90mm x 55mm (Euro Standard)">Euro Standard (90mm x 55mm)</option>
-            <option value="60mm x 60mm (Square Card)">Square Card (60mm x 60mm)</option>
-          </select>
-        </div>
+        {/* Standard Card Dimensions */}
+        <CustomDropdownSelect
+          label="Standard Card Dimensions"
+          value={cardConfig.presetDimensions}
+          options={dimensionsOptions}
+          onChange={(val) => updateCard('presetDimensions', val)}
+          onAddOption={handleAddDimension}
+          onDeleteOption={handleDeleteDimension}
+          placeholder="e.g. Mini Slim (85mm x 40mm)"
+        />
 
-        <div>
-          <label className="block font-bold text-slate-700 mb-1.5 uppercase text-[10px] tracking-wider">
-            Corner Cutting Options
-          </label>
-          <select
-            value={cardConfig.cardCornerStyle}
-            onChange={(e) => updateCard('cardCornerStyle', e.target.value)}
-            className="w-full p-2.5 rounded-xl border border-purple-300 font-bold text-slate-800 text-[13.5px] bg-white focus:outline-none focus:border-purple-600"
-          >
-            <option value="Standard Square">Standard Square Corners (90° Sharp)</option>
-            <option value="Round 4 Corners (3mm radius)">Round 4 Corners (3mm Radius)</option>
-            <option value="Round 4 Corners (6mm radius)">Round 4 Corners (6mm Radius)</option>
-            <option value="Diagonal Cut Corners">Diagonal Cut / Custom Shape Die</option>
-          </select>
-        </div>
+        {/* Corner Cutting Options */}
+        <CustomDropdownSelect
+          label="Corner Cutting Options"
+          value={cardConfig.cardCornerStyle}
+          options={cornerOptions}
+          onChange={(val) => updateCard('cardCornerStyle', val)}
+          onAddOption={handleAddCorner}
+          onDeleteOption={handleDeleteCorner}
+          placeholder="e.g. Oval / Arch Custom Cut"
+        />
 
         <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
           <div className="p-3 bg-white rounded-xl border border-purple-200 flex items-center justify-between">

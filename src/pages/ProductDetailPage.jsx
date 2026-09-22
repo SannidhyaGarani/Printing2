@@ -21,6 +21,8 @@ import { useAuth } from '../context/AuthContext';
 import { DEFAULT_CATALOG_OPTIONS } from '../services/firebase';
 import { ArtworkUploadModal } from '../Components/cart/ArtworkUploadModal';
 import { GoogleReviewsSection } from '../Components/sections/GoogleReviewsSection';
+import { DynamicStorefrontForm } from '../Components/sections/DynamicStorefrontForm';
+import { ensureCustomSections } from '../utils/customSectionsHelper';
 
 // Helper to convert camelCase keys like 'paperStock' -> 'Paper Stock'
 const formatKeyToTitle = (key) => {
@@ -172,6 +174,40 @@ export function ProductDetailPage({ product, onBack, onNavigateCart, allProducts
 
   const isSaved = isInWishlist(product.id);
 
+  // Effective Custom Sections for product (uses helper for legacy product fallback)
+  const effectiveCustomSections = React.useMemo(() => {
+    return ensureCustomSections(product);
+  }, [product]);
+
+  const [dynamicValues, setDynamicValues] = useState({});
+
+  useEffect(() => {
+    const initial = {};
+    effectiveCustomSections.forEach(sec => {
+      if (sec.enabled !== false && sec.fields) {
+        sec.fields.forEach(field => {
+          const fId = field.id;
+          if (field.type === 'checkbox') {
+            initial[fId] = Array.isArray(field.defaultValue) ? field.defaultValue : [];
+          } else if (field.options && field.options.length > 0) {
+            const firstOpt = field.options[0];
+            initial[fId] = firstOpt.value || firstOpt.label || firstOpt;
+          } else {
+            initial[fId] = field.defaultValue || '';
+          }
+        });
+      }
+    });
+    setDynamicValues(initial);
+  }, [effectiveCustomSections]);
+
+  const handleDynamicValueChange = (fieldId, newValue) => {
+    setDynamicValues(prev => ({
+      ...prev,
+      [fieldId]: newValue
+    }));
+  };
+
   // Active tier lookup
   const getActiveTier = () => {
     if (!product.tieredPricing || product.tieredPricing.length === 0) return null;
@@ -182,7 +218,7 @@ export function ProductDetailPage({ product, onBack, onNavigateCart, allProducts
 
   const activeTier = getActiveTier();
 
-  // Price Calculation
+  // Price Calculation including dynamic fields & custom area
   const calculatePrice = () => {
     const validQty = Math.max(1, quantity || minPieces);
     let baseUnitPrice = product.basePrice || product.price || 5.0;
@@ -191,18 +227,45 @@ export function ProductDetailPage({ product, onBack, onNavigateCart, allProducts
     }
 
     let totalModifiers = 0;
-    Object.entries(effectiveVariants).forEach(([key, options]) => {
-      if (key === 'customAreaPricing') return;
-      if (Array.isArray(options) && options.length > 0) {
-        const selectedVal = selectedVariants[key];
-        const match = options.find(
-          (opt) => (typeof opt === 'string' ? opt : opt.name) === selectedVal
-        );
-        if (match && typeof match === 'object' && match.priceModifier) {
-          totalModifiers += Number(match.priceModifier) || 0;
-        }
+
+    // Sum modifiers from dynamic form fields
+    effectiveCustomSections.forEach(sec => {
+      if (sec.enabled !== false && sec.fields) {
+        sec.fields.forEach(field => {
+          const fId = field.id;
+          const userVal = dynamicValues[fId];
+          if (['dropdown', 'radio'].includes(field.type) && field.options) {
+            const match = field.options.find(o => (o.value || o.label || o) === userVal);
+            if (match && match.priceModifier) {
+              totalModifiers += Number(match.priceModifier) || 0;
+            }
+          } else if (field.type === 'checkbox' && Array.isArray(userVal) && field.options) {
+            userVal.forEach(val => {
+              const match = field.options.find(o => (o.value || o.label || o) === val);
+              if (match && match.priceModifier) {
+                totalModifiers += Number(match.priceModifier) || 0;
+              }
+            });
+          }
+        });
       }
     });
+
+    // Legacy variants sum fallback if no dynamic modifiers found
+    if (totalModifiers === 0) {
+      Object.entries(effectiveVariants).forEach(([key, options]) => {
+        if (key === 'customAreaPricing') return;
+        if (Array.isArray(options) && options.length > 0) {
+          const selectedVal = selectedVariants[key];
+          const match = options.find(
+            (opt) => (typeof opt === 'string' ? opt : opt.name) === selectedVal
+          );
+          if (match && typeof match === 'object' && match.priceModifier) {
+            totalModifiers += Number(match.priceModifier) || 0;
+          }
+        }
+      });
+    }
 
     if (matchedAreaTier && calculatedAreaSqCm > 0) {
       const areaPriceVal = Number(matchedAreaTier.priceModifier !== undefined ? matchedAreaTier.priceModifier : (matchedAreaTier.price || 0)) || 0;
@@ -224,11 +287,25 @@ export function ProductDetailPage({ product, onBack, onNavigateCart, allProducts
   };
 
   const handleAddToCart = () => {
+    // Construct readable summary of dynamic field selections for cart/orders
+    const dynamicOptionsSummary = {};
+    effectiveCustomSections.forEach(sec => {
+      if (sec.enabled !== false && sec.fields) {
+        sec.fields.forEach(field => {
+          const val = dynamicValues[field.id];
+          if (val !== undefined && val !== '') {
+            dynamicOptionsSummary[field.label] = Array.isArray(val) ? val.join(', ') : val;
+          }
+        });
+      }
+    });
+
     addToCart({
       id: product.id,
       name: product.title || product.name,
       qty: quantity,
-      selectedOptions: selectedVariants,
+      selectedOptions: { ...selectedVariants, ...dynamicOptionsSummary },
+      dynamicFormValues: dynamicValues,
       paper: selectedVariants.paperStock || '',
       finish: selectedVariants.finishes || '',
       sides: selectedVariants.sides || '',
@@ -445,99 +522,59 @@ export function ProductDetailPage({ product, onBack, onNavigateCart, allProducts
               </div>
             </div>
 
-            {/* DYNAMIC OPTION SELECTORS (Matching Screenshot 1 Card Layout) */}
+            {/* DYNAMIC STOREFRONT FORM RENDERER (Matching Reference Screenshot Structure) */}
             <div className="space-y-6 pt-2 border-t border-slate-100">
-              
-              {/* Render Each Option Group dynamically from admin settings */}
-              {availableVariantEntries.map(([key, optionsList]) => {
-                const title = formatKeyToTitle(key);
-                const currentSelected = selectedVariants[key];
+              <DynamicStorefrontForm
+                customSections={effectiveCustomSections}
+                formValues={dynamicValues}
+                onValueChange={handleDynamicValueChange}
+              />
 
-                // Custom Area Height & Width Pricing Section
-                if (key === 'customAreaPricing') {
-                  const activePrice = matchedAreaTier ? (matchedAreaTier.priceModifier !== undefined ? matchedAreaTier.priceModifier : matchedAreaTier.price) : 0;
-                  return (
-                    <div key={key} className="space-y-3 bg-[#FAFBFD] p-4.5 rounded-2xl border border-slate-200">
-                      <div className="flex items-center justify-between">
-                        <label className="font-bold text-[14px] text-slate-900">{title}:</label>
-                        {calculatedAreaSqCm > 0 && matchedAreaTier && (
-                          <span className="text-[12px] font-black text-emerald-800 bg-emerald-50 border border-emerald-300 px-3 py-0.5 rounded-full">
-                            Matched Tier: {matchedAreaTier.name || `Up to ${matchedAreaTier.maxArea} sq.ft`} (+₹{activePrice})
-                          </span>
-                        )}
-                      </div>
+              {/* Custom Area Height & Width Pricing Section if enabled */}
+              {product.enableCustomArea && (
+                <div className="space-y-3 bg-[#FAFBFD] p-4.5 rounded-2xl border border-slate-200">
+                  <div className="flex items-center justify-between">
+                    <label className="font-bold text-[14px] text-slate-900">Area Dimensions (Sq.Ft):</label>
+                    {calculatedAreaSqCm > 0 && matchedAreaTier && (
+                      <span className="text-[12px] font-black text-emerald-800 bg-emerald-50 border border-emerald-300 px-3 py-0.5 rounded-full">
+                        Matched Tier: {matchedAreaTier.name || `Up to ${matchedAreaTier.maxArea} sq.ft`} (+₹{matchedAreaTier.priceModifier || matchedAreaTier.price || 0})
+                      </span>
+                    )}
+                  </div>
 
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-[12px] font-bold text-slate-600 mb-1">Height (ft):</label>
-                          <input
-                            type="number"
-                            min="0.1"
-                            step="0.1"
-                            value={customHeight}
-                            onChange={(e) => setCustomHeight(e.target.value)}
-                            className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 font-bold text-[14px] text-slate-900 focus:outline-none focus:border-[#EA580C]"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-[12px] font-bold text-slate-600 mb-1">Width (ft):</label>
-                          <input
-                            type="number"
-                            min="0.1"
-                            step="0.1"
-                            value={customWidth}
-                            onChange={(e) => setCustomWidth(e.target.value)}
-                            className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 font-bold text-[14px] text-slate-900 focus:outline-none focus:border-[#EA580C]"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="p-2.5 bg-white rounded-xl border border-slate-200 flex items-center justify-between text-[13px] font-bold text-slate-700">
-                        <span>Calculated Area:</span>
-                        <span className="text-sm font-black text-[#EA580C]">
-                          {calculatedAreaSqCm > 0 ? `${customHeight}ft × ${customWidth}ft = ${calculatedAreaSqCm} sq.ft` : 'Enter dimensions'}
-                        </span>
-                      </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[12px] font-bold text-slate-600 mb-1">Height (ft):</label>
+                      <input
+                        type="number"
+                        min="0.1"
+                        step="0.1"
+                        value={customHeight}
+                        onChange={(e) => setCustomHeight(e.target.value)}
+                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 font-bold text-[14px] text-slate-900 focus:outline-none focus:border-[#EA580C]"
+                      />
                     </div>
-                  );
-                }
-
-                // Grid Card Selector for Sides, Edge Cutting, Paper Stock, Finishes, etc.
-                return (
-                  <div key={key} className="space-y-2">
-                    <label className="font-bold text-[14px] text-slate-900 block">
-                      {title}
-                    </label>
-
-                    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 gap-3">
-                      {optionsList.map((opt, i) => {
-                        const optName = typeof opt === 'string' ? opt : opt.name;
-                        const optPrice = typeof opt === 'object' && opt.priceModifier ? opt.priceModifier : 0;
-                        const subtitle = getOptionSubtitle(optName, opt);
-                        const isSelected = currentSelected === optName;
-
-                        return (
-                          <button
-                            key={i}
-                            type="button"
-                            onClick={() => handleOptionChange(key, optName)}
-                            className={`p-3.5 rounded-xl text-center border-2 transition-all cursor-pointer flex flex-col items-center justify-center gap-0.5 ${
-                              isSelected
-                                ? 'bg-[#FFF7ED] border-[#EA580C] text-[#EA580C] shadow-3xs'
-                                : 'bg-white border-slate-200 text-slate-800 hover:border-orange-300'
-                            }`}
-                          >
-                            <span className="font-black text-[14px] leading-tight">{optName}</span>
-                            <span className={`text-[11.5px] font-medium ${isSelected ? 'text-[#EA580C]' : 'text-slate-500'}`}>
-                              {subtitle || (optPrice > 0 ? `+₹${optPrice}` : 'Included')}
-                            </span>
-                          </button>
-                        );
-                      })}
+                    <div>
+                      <label className="block text-[12px] font-bold text-slate-600 mb-1">Width (ft):</label>
+                      <input
+                        type="number"
+                        min="0.1"
+                        step="0.1"
+                        value={customWidth}
+                        onChange={(e) => setCustomWidth(e.target.value)}
+                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 font-bold text-[14px] text-slate-900 focus:outline-none focus:border-[#EA580C]"
+                      />
                     </div>
                   </div>
-                );
-              })}
+
+                  <div className="p-2.5 bg-white rounded-xl border border-slate-200 flex items-center justify-between text-[13px] font-bold text-slate-700">
+                    <span>Calculated Area:</span>
+                    <span className="text-sm font-black text-[#EA580C]">
+                      {calculatedAreaSqCm > 0 ? `${customHeight}ft × ${customWidth}ft = ${calculatedAreaSqCm} sq.ft` : 'Enter dimensions'}
+                    </span>
+                  </div>
+                </div>
+              )}
 
               {/* QUANTITY CARDS SELECTOR (Matching Screenshot 1) */}
               <div className="space-y-2">

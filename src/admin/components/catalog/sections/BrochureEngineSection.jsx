@@ -1,7 +1,8 @@
 import React from 'react';
 import { BookOpen, Folders } from 'lucide-react';
+import { CustomDropdownSelect } from './CustomDropdownSelect';
 
-export const BrochureEngineSection = ({ formData, setFormData }) => {
+export const BrochureEngineSection = ({ formData, setFormData, catalogOptions, updateCatalogOptions }) => {
   if (!formData.enableBrochureEngine) return null;
 
   const brochureConfig = formData.brochureConfig || {
@@ -11,11 +12,60 @@ export const BrochureEngineSection = ({ formData, setFormData }) => {
     foldedPanelCount: 6
   };
 
+  const defaultFoldTypes = [
+    'Half Fold / Bi-Fold (4 Printed Panels)',
+    'Tri-Fold / Letter C-Fold (6 Printed Panels)',
+    'Z-Fold / Accordion Fold (6 Printed Panels)',
+    'Gate Fold (6 Printed Panels)',
+    'Double Parallel Fold (8 Printed Panels)',
+    'No Fold (Flat Sheet)'
+  ];
+
+  const defaultFlatSizes = [
+    'A4 Sheet (297 x 210mm)',
+    'A3 Oversized (420 x 297mm)',
+    'A5 Sheet (210 x 148mm)',
+    'DL Tri-Fold Flat (297 x 210mm)'
+  ];
+
+  const foldTypesOptions = catalogOptions?.brochureFoldTypesOptions || defaultFoldTypes;
+  const flatSizesOptions = catalogOptions?.brochureFlatSizesOptions || defaultFlatSizes;
+
   const updateBrochure = (key, val) => {
     setFormData({
       ...formData,
       brochureConfig: { ...brochureConfig, [key]: val }
     });
+  };
+
+  // Fold Type Handlers
+  const handleAddFoldType = (newName) => {
+    const updated = [...foldTypesOptions, newName];
+    if (updateCatalogOptions && catalogOptions) {
+      updateCatalogOptions({ ...catalogOptions, brochureFoldTypesOptions: updated });
+    }
+  };
+
+  const handleDeleteFoldType = (optToDelete) => {
+    const updated = foldTypesOptions.filter(o => o !== optToDelete);
+    if (updateCatalogOptions && catalogOptions) {
+      updateCatalogOptions({ ...catalogOptions, brochureFoldTypesOptions: updated });
+    }
+  };
+
+  // Flat Size Handlers
+  const handleAddFlatSize = (newName) => {
+    const updated = [...flatSizesOptions, newName];
+    if (updateCatalogOptions && catalogOptions) {
+      updateCatalogOptions({ ...catalogOptions, brochureFlatSizesOptions: updated });
+    }
+  };
+
+  const handleDeleteFlatSize = (optToDelete) => {
+    const updated = flatSizesOptions.filter(o => o !== optToDelete);
+    if (updateCatalogOptions && catalogOptions) {
+      updateCatalogOptions({ ...catalogOptions, brochureFlatSizesOptions: updated });
+    }
   };
 
   return (
@@ -31,39 +81,27 @@ export const BrochureEngineSection = ({ formData, setFormData }) => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="block font-bold text-slate-700 mb-1.5 uppercase text-[10px] tracking-wider">
-            Fold Pattern Type
-          </label>
-          <select
-            value={brochureConfig.foldType}
-            onChange={(e) => updateBrochure('foldType', e.target.value)}
-            className="w-full p-2.5 rounded-xl border border-indigo-300 font-bold text-slate-800 text-[13.5px] bg-white focus:outline-none focus:border-indigo-600"
-          >
-            <option value="Half Fold (Bi-Fold)">Half Fold / Bi-Fold (4 Printed Panels)</option>
-            <option value="Tri-Fold (C-Fold)">Tri-Fold / Letter C-Fold (6 Printed Panels)</option>
-            <option value="Z-Fold (Accordion)">Z-Fold / Accordion Fold (6 Printed Panels)</option>
-            <option value="Gate Fold">Gate Fold (6 Printed Panels)</option>
-            <option value="Double Parallel Fold">Double Parallel Fold (8 Printed Panels)</option>
-            <option value="No Fold (Flat Flysheet)">No Fold (Flat Sheet)</option>
-          </select>
-        </div>
+        {/* Fold Pattern Type */}
+        <CustomDropdownSelect
+          label="Fold Pattern Type"
+          value={brochureConfig.foldType}
+          options={foldTypesOptions}
+          onChange={(val) => updateBrochure('foldType', val)}
+          onAddOption={handleAddFoldType}
+          onDeleteOption={handleDeleteFoldType}
+          placeholder="e.g. Map Fold / Roll Fold"
+        />
 
-        <div>
-          <label className="block font-bold text-slate-700 mb-1.5 uppercase text-[10px] tracking-wider">
-            Flat Unfolded Sheet Size
-          </label>
-          <select
-            value={brochureConfig.flatUnfoldedSize}
-            onChange={(e) => updateBrochure('flatUnfoldedSize', e.target.value)}
-            className="w-full p-2.5 rounded-xl border border-indigo-300 font-bold text-slate-800 text-[13.5px] bg-white focus:outline-none focus:border-indigo-600"
-          >
-            <option value="A4 (297 x 210mm)">A4 Sheet (297 x 210mm)</option>
-            <option value="A3 (420 x 297mm)">A3 Oversized (420 x 297mm)</option>
-            <option value="A5 (210 x 148mm)">A5 Sheet (210 x 148mm)</option>
-            <option value="DL Flat (297 x 210mm)">DL Tri-Fold Flat (297 x 210mm)</option>
-          </select>
-        </div>
+        {/* Flat Unfolded Sheet Size */}
+        <CustomDropdownSelect
+          label="Flat Unfolded Sheet Size"
+          value={brochureConfig.flatUnfoldedSize}
+          options={flatSizesOptions}
+          onChange={(val) => updateBrochure('flatUnfoldedSize', val)}
+          onAddOption={handleAddFlatSize}
+          onDeleteOption={handleDeleteFlatSize}
+          placeholder="e.g. Oversized Banner (630 x 297mm)"
+        />
 
         <div className="md:col-span-2 flex items-center justify-between p-3 bg-white rounded-xl border border-indigo-200">
           <div>
