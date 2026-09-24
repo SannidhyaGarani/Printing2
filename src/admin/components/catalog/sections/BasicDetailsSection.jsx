@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Package, Plus, Check } from 'lucide-react';
+import { saveHomepageCategory } from '../../../../services/firebase';
 
 export const BasicDetailsSection = ({
   formData,
@@ -65,6 +66,17 @@ export const BasicDetailsSection = ({
         </div>
 
         <div>
+          <label className="block font-bold text-slate-700 mb-1.5 uppercase text-[10px] tracking-wider">Pricing Unit *</label>
+          <input
+            type="text"
+            value={formData.unit || 'pcs'}
+            onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
+            placeholder="e.g. pcs, pages, kg, bundle"
+            className="w-full p-3 rounded-xl border border-slate-200 font-extrabold text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 text-[14px]"
+          />
+        </div>
+
+        <div>
           <label className="block font-bold text-slate-700 mb-1.5 uppercase text-[10px] tracking-wider">Minimum Order Qty (MOQ) *</label>
           <input
             type="number"
@@ -111,6 +123,17 @@ export const BasicDetailsSection = ({
                     };
                     const updated = [...(megamenuCategories || []), newCat];
                     if (updateMegamenuCategories) await updateMegamenuCategories(updated);
+
+                    // Automatically add to Shop By Category (homepage_categories)
+                    await saveHomepageCategory({
+                      id: newCat.id,
+                      title: name,
+                      query: newCat.id,
+                      sub: '',
+                      img: '',
+                      icon: 'FiBox'
+                    });
+
                     setFormData({ ...formData, category: name, subcategory: '' });
                     setInlineCatInput('');
                     setShowInlineCatInput(false);
@@ -176,16 +199,25 @@ export const BasicDetailsSection = ({
                 onClick={async () => {
                   if (inlineSubcatInput.trim() && formData.category) {
                     const subName = inlineSubcatInput.trim();
+                    let updatedCategory = null;
                     const updatedCats = (megamenuCategories || []).map(c => {
                       if ((c.categoryQuery || c.title) === formData.category || c.title === formData.category) {
-                        return {
+                        updatedCategory = {
                           ...c,
                           items: [...(c.items || []), { name: subName, search: subName, tag: 'Custom Spec' }]
                         };
+                        return updatedCategory;
                       }
                       return c;
                     });
-                    if (updateMegamenuCategories) await updateMegamenuCategories(updatedCats);
+
+                    if (updateMegamenuCategories) {
+                      await updateMegamenuCategories(updatedCats);
+                    } else if (updatedCategory) {
+                      // Save updated category object directly to Firebase
+                      await saveHomepageCategory(updatedCategory);
+                    }
+
                     setFormData({ ...formData, subcategory: subName });
                     setInlineSubcatInput('');
                     setShowInlineSubcatInput(false);
@@ -249,6 +281,41 @@ export const BasicDetailsSection = ({
           </span>
         </div>
 
+        {/* Industry / Built for Your Business Selection */}
+        <div className="md:col-span-2">
+          <label className="block font-bold text-slate-700 mb-1.5 uppercase text-[10px] tracking-wider">
+            Industry / 'Built for Your Business' Assignment
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {['Startups', 'Restaurant', 'Events', 'Corporate'].map(industry => {
+              const isSelected = (formData.industries || []).includes(industry);
+              return (
+                <button
+                  key={industry}
+                  type="button"
+                  onClick={() => {
+                    const current = formData.industries || [];
+                    if (isSelected) {
+                      setFormData({ ...formData, industries: current.filter(i => i !== industry) });
+                    } else {
+                      setFormData({ ...formData, industries: [...current, industry] });
+                    }
+                  }}
+                  className={`px-3 py-1.5 rounded-lg border text-sm font-bold transition-all ${isSelected
+                    ? 'bg-blue-600 text-white border-blue-600 shadow-md'
+                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300'
+                    }`}
+                >
+                  {isSelected ? '✓ ' : '+ '}{industry}
+                </button>
+              );
+            })}
+          </div>
+          <span className="text-[10px] text-slate-400 font-medium mt-1 block">
+            Click to assign this product to one or more industry categories shown on the homepage.
+          </span>
+        </div>
+
         {/* Related Products Selection Card Scroller */}
         <div className="md:col-span-2 pt-3 border-t border-slate-100 space-y-2">
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -304,11 +371,10 @@ export const BasicDetailsSection = ({
                     <div
                       key={p.id}
                       onClick={() => toggleRelatedProduct(p.id)}
-                      className={`w-48 shrink-0 rounded-2xl border-2 transition-all cursor-pointer overflow-hidden bg-white group select-none flex flex-col justify-between ${
-                        isSelected
-                          ? 'border-blue-600 bg-blue-50/40 ring-2 ring-blue-500/20 shadow-md scale-[1.02]'
-                          : 'border-slate-200/90 hover:border-blue-300 hover:shadow-sm'
-                      }`}
+                      className={`w-48 shrink-0 rounded-2xl border-2 transition-all cursor-pointer overflow-hidden bg-white group select-none flex flex-col justify-between ${isSelected
+                        ? 'border-blue-600 bg-blue-50/40 ring-2 ring-blue-500/20 shadow-md scale-[1.02]'
+                        : 'border-slate-200/90 hover:border-blue-300 hover:shadow-sm'
+                        }`}
                     >
                       {/* Product Thumbnail & Badges */}
                       <div className="h-28 bg-slate-100 relative overflow-hidden">
@@ -325,9 +391,8 @@ export const BasicDetailsSection = ({
                         )}
 
                         {/* Top-Right Selection Badge */}
-                        <div className={`absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center shadow-md transition-all ${
-                          isSelected ? 'bg-blue-600 text-white scale-110 font-black text-xs' : 'bg-white/90 text-slate-400 text-[10px] border border-slate-300'
-                        }`}>
+                        <div className={`absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center shadow-md transition-all ${isSelected ? 'bg-blue-600 text-white scale-110 font-black text-xs' : 'bg-white/90 text-slate-400 text-[10px] border border-slate-300'
+                          }`}>
                           {isSelected ? '✓' : '○'}
                         </div>
 

@@ -1,13 +1,13 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { 
-  INITIAL_PRICING_RULES, 
+import {
+  INITIAL_PRICING_RULES,
   INITIAL_CLOUDINARY_MEDIA,
   INITIAL_LOGISTICS_LOGS
 } from '../data/mockAdminData';
-import { 
-  subscribeToOrders, 
-  subscribeToProducts, 
-  subscribeToDesignRequests, 
+import {
+  subscribeToOrders,
+  subscribeToProducts,
+  subscribeToDesignRequests,
   updateOrderStatusInFirestore,
   addOrderToFirestore,
   addProductToFirestore,
@@ -50,7 +50,7 @@ export const AdminProvider = ({ children }) => {
         url.hash = fragment.startsWith('#') ? fragment : `#${fragment}`;
       }
       window.history.pushState(null, '', url.toString());
-    } catch (e) {}
+    } catch (e) { }
   };
 
   useEffect(() => {
@@ -218,7 +218,7 @@ export const AdminProvider = ({ children }) => {
 
   // Update Order Status Handler (Syncs to Firestore)
   const updateOrderStatus = async (orderId, newStatus) => {
-    setOrders(prevOrders => 
+    setOrders(prevOrders =>
       prevOrders.map(o => o.id === orderId ? { ...o, status: newStatus } : o)
     );
     if (selectedOrder && selectedOrder.id === orderId) {
@@ -252,7 +252,7 @@ export const AdminProvider = ({ children }) => {
         previewUrl: "https://images.unsplash.com/photo-1589829085413-56de8ae18c73?q=80&w=800&auto=format&fit=crop"
       }
     };
-    
+
     // Save to Firestore real-time collection
     await addOrderToFirestore(newOrder);
     setOrders(prev => [newOrder, ...prev]);
@@ -275,21 +275,21 @@ export const AdminProvider = ({ children }) => {
 
   // Toggle B2B NET-15 Privilege
   const toggleB2BCredit = (customerId) => {
-    setCustomers(prev => 
+    setCustomers(prev =>
       prev.map(c => c.id === customerId ? { ...c, creditNet15: !c.creditNet15 } : c)
     );
   };
 
   // Assign Graphic Designer to Ticket
   const assignDesignerToTicket = (ticketId, designerName) => {
-    setDesignRequests(prev => 
+    setDesignRequests(prev =>
       prev.map(t => t.id === ticketId ? { ...t, assignedDesigner: designerName, status: "In Progress" } : t)
     );
   };
 
   // Upload Proof for Ticket
   const uploadTicketProof = (ticketId, proofUrl) => {
-    setDesignRequests(prev => 
+    setDesignRequests(prev =>
       prev.map(t => t.id === ticketId ? { ...t, proofUrl, status: "Proof Generated" } : t)
     );
   };

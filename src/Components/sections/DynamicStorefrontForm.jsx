@@ -1,5 +1,6 @@
 import React from 'react';
 import { FiChevronDown, FiCheck } from 'react-icons/fi';
+import { Maximize2, AlignJustify, AlignCenter } from 'lucide-react';
 
 export const DynamicStorefrontForm = ({
   customSections = [],
@@ -7,7 +8,7 @@ export const DynamicStorefrontForm = ({
   onValueChange
 }) => {
   if (!customSections || customSections.length === 0) return null;
-
+c
   return (
     <div className="space-y-8">
       {customSections.map((sec, sIdx) => {
@@ -106,11 +107,10 @@ export const DynamicStorefrontForm = ({
                               key={opt.id || oIdx}
                               type="button"
                               onClick={() => onValueChange(fieldId, optVal, field)}
-                              className={`p-3 rounded-xl border-2 font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between ${
-                                isSelected
+                              className={`p-3 rounded-xl border-2 font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between ${isSelected
                                   ? 'bg-[#FFF7ED] border-[#EA580C] text-[#EA580C] shadow-3xs'
                                   : 'bg-white border-slate-200 text-slate-800 hover:border-orange-300'
-                              }`}
+                                }`}
                             >
                               <span>{optLabel}</span>
                               {opt.priceModifier > 0 && (
@@ -143,22 +143,59 @@ export const DynamicStorefrontForm = ({
                                   : [...selectedList, optVal];
                                 onValueChange(fieldId, nextList, field);
                               }}
-                              className={`p-3 rounded-xl border-2 font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between ${
-                                isChecked
+                              className={`p-3 rounded-xl border-2 font-bold text-[13.5px] transition-all cursor-pointer flex items-center justify-between ${isChecked
                                   ? 'bg-[#FFF7ED] border-[#EA580C] text-[#EA580C] shadow-3xs'
                                   : 'bg-white border-slate-200 text-slate-800 hover:border-orange-300'
-                              }`}
+                                }`}
                             >
                               <div className="flex items-center gap-2">
-                                <div className={`w-4 h-4 rounded flex items-center justify-center border ${
-                                  isChecked ? 'bg-[#EA580C] border-[#EA580C] text-white' : 'border-slate-300 bg-white'
-                                }`}>
+                                <div className={`w-4 h-4 rounded flex items-center justify-center border ${isChecked ? 'bg-[#EA580C] border-[#EA580C] text-white' : 'border-slate-300 bg-white'
+                                  }`}>
                                   {isChecked && <FiCheck className="w-3 h-3 text-white" />}
                                 </div>
                                 <span>{optLabel}</span>
                               </div>
                               {opt.priceModifier > 0 && (
                                 <span className="text-[11px] font-black text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">
+                                  +₹{opt.priceModifier}
+                                </span>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* CONTROL TYPE 6: ORIENTATION */}
+                    {field.type === 'orientation' && (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-1">
+                        {(field.options || []).map((opt, oIdx) => {
+                          const optVal = opt.value || opt.label;
+                          const optLabel = opt.label || opt.value;
+                          const isSelected = currentValue === optVal;
+                          const isPortrait = optVal.toLowerCase().includes('portrait') || optLabel.toLowerCase().includes('portrait');
+
+                          return (
+                            <button
+                              key={opt.id || oIdx}
+                              type="button"
+                              onClick={() => onValueChange(fieldId, optVal, field)}
+                              className={`group relative flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl border-2 transition-all cursor-pointer font-extrabold text-[13px] ${isSelected
+                                  ? 'bg-[#FFF7ED] border-[#EA580C] text-[#EA580C] shadow-sm'
+                                  : 'bg-white border-slate-200 text-slate-800 hover:border-orange-300'
+                                }`}
+                            >
+                              <div className={`w-10 h-7 rounded-lg border-2 flex items-center justify-center ${isSelected ? 'border-[#EA580C] bg-orange-100' : 'border-slate-300 bg-slate-50'
+                                }`}>
+                                {isPortrait ? (
+                                  <AlignCenter className={`w-4 h-4 ${isSelected ? 'text-[#EA580C]' : 'text-slate-600'}`} />
+                                ) : (
+                                  <AlignJustify className={`w-4 h-4 ${isSelected ? 'text-[#EA580C]' : 'text-slate-600'}`} />
+                                )}
+                              </div>
+                              <span className="text-center mt-1">{optLabel}</span>
+                              {opt.priceModifier > 0 && (
+                                <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-1.5 rounded-md">
                                   +₹{opt.priceModifier}
                                 </span>
                               )}

@@ -1,27 +1,37 @@
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { FiArrowRight } from 'react-icons/fi'
+import { subscribeToHomepageBlogs } from '../../services/firebase'
 
 export function LatestBlog({ setCurrentPage }) {
-  const blogPosts = [
-    {
-      title: '5 Creative Business Card Ideas That Stand Out',
-      category: 'Design Tips',
-      date: 'Mar 12, 2024',
-      img: 'https://images.unsplash.com/photo-1612831819695-7e71f5ccf16c?auto=format&fit=crop&q=80&w=600',
-    },
-    {
-      title: 'How Custom Packaging Can Boost Your Brand',
-      category: 'Business Growth',
-      date: 'Mar 8, 2024',
-      img: 'https://images.unsplash.com/photo-1586953208448-b95a79798f07?auto=format&fit=crop&q=80&w=600',
-    },
-    {
-      title: 'A Complete Guide to Choosing the Right Paper for Your Prints',
-      category: 'Print Guides',
-      date: 'Feb 28, 2024',
-      img: 'https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&q=80&w=600',
-    },
-  ]
+  const [blogPosts, setBlogPosts] = useState([]);
+
+  useEffect(() => {
+    const unsub = subscribeToHomepageBlogs((data) => {
+      setBlogPosts(data && data.length > 0 ? data : [
+        {
+          title: '5 Creative Business Card Ideas That Stand Out',
+          category: 'Design Tips',
+          date: 'Mar 12, 2024',
+          img: 'https://images.unsplash.com/photo-1612831819695-7e71f5ccf16c?auto=format&fit=crop&q=80&w=600',
+        },
+        {
+          title: 'How Custom Packaging Can Boost Your Brand',
+          category: 'Business Growth',
+          date: 'Mar 8, 2024',
+          img: 'https://images.unsplash.com/photo-1586953208448-b95a79798f07?auto=format&fit=crop&q=80&w=600',
+        },
+        {
+          title: 'A Complete Guide to Choosing the Right Paper for Your Prints',
+          category: 'Print Guides',
+          date: 'Feb 28, 2024',
+          img: 'https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&q=80&w=600',
+        },
+      ]);
+    });
+    return () => unsub();
+  }, []);
+
 
   const handleLink = () => {
     if (typeof setCurrentPage === 'function') {
@@ -33,7 +43,7 @@ export function LatestBlog({ setCurrentPage }) {
   return (
     <section className="py-12 sm:py-16 bg-[#F9FAFB] font-sans border-b border-[#E2E8F0]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
+
         {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
           <div>

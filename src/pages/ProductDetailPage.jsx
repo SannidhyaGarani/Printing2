@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  FiArrowLeft, 
-  FiShoppingBag, 
-  FiHeart, 
-  FiCheckCircle, 
-  FiTruck, 
-  FiShield, 
-  FiUploadCloud, 
+import {
+  FiArrowLeft,
+  FiShoppingBag,
+  FiHeart,
+  FiCheckCircle,
+  FiTruck,
+  FiShield,
+  FiUploadCloud,
   FiZap,
   FiFileText,
   FiPackage,
@@ -20,6 +20,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { DEFAULT_CATALOG_OPTIONS } from '../services/firebase';
 import { ArtworkUploadModal } from '../Components/cart/ArtworkUploadModal';
+import { subscribeToHomepageTestimonials } from '../services/firebase';
 import { GoogleReviewsSection } from '../Components/sections/GoogleReviewsSection';
 import { DynamicStorefrontForm } from '../Components/sections/DynamicStorefrontForm';
 import { ensureCustomSections } from '../utils/customSectionsHelper';
@@ -64,8 +65,8 @@ const getOptionSubtitle = (val, optObj) => {
 export function ProductDetailPage({ product, onBack, onNavigateCart, allProducts = [], onSelectProduct }) {
   const { addToCart, toggleWishlist, isInWishlist } = useAuth();
 
-  const imagesList = product.images && product.images.length > 0 
-    ? product.images 
+  const imagesList = product.images && product.images.length > 0
+    ? product.images
     : (product.image ? [product.image] : []);
 
   const [selectedImage, setSelectedImage] = useState(
@@ -77,6 +78,19 @@ export function ProductDetailPage({ product, onBack, onNavigateCart, allProducts
       setSelectedImage(imagesList[0]);
     }
   }, [product]);
+
+  const [testimonials, setTestimonials] = useState([]);
+  useEffect(() => {
+    const unsub = subscribeToHomepageTestimonials((data) => {
+      setTestimonials(data || []);
+    });
+    return () => unsub();
+  }, []);
+
+  const totalReviews = testimonials.length;
+  const avgRating = totalReviews > 0 ? (testimonials.reduce((sum, t) => sum + (t.rating || 5), 0) / totalReviews).toFixed(1) : '5.0';
+
+
 
   // Minimum Order Quantity from product or default 100
   const minPieces = product.minOrderQty || 100;
@@ -218,6 +232,8 @@ export function ProductDetailPage({ product, onBack, onNavigateCart, allProducts
 
   const activeTier = getActiveTier();
 
+  const hasDynamicFields = effectiveCustomSections.some(sec => sec.enabled !== false && sec.fields && sec.fields.length > 0);
+
   // Price Calculation including dynamic fields & custom area
   const calculatePrice = () => {
     const validQty = Math.max(1, quantity || minPieces);
@@ -228,31 +244,32 @@ export function ProductDetailPage({ product, onBack, onNavigateCart, allProducts
 
     let totalModifiers = 0;
 
-    // Sum modifiers from dynamic form fields
-    effectiveCustomSections.forEach(sec => {
-      if (sec.enabled !== false && sec.fields) {
-        sec.fields.forEach(field => {
-          const fId = field.id;
-          const userVal = dynamicValues[fId];
-          if (['dropdown', 'radio'].includes(field.type) && field.options) {
-            const match = field.options.find(o => (o.value || o.label || o) === userVal);
-            if (match && match.priceModifier) {
-              totalModifiers += Number(match.priceModifier) || 0;
-            }
-          } else if (field.type === 'checkbox' && Array.isArray(userVal) && field.options) {
-            userVal.forEach(val => {
-              const match = field.options.find(o => (o.value || o.label || o) === val);
+    if (hasDynamicFields) {
+      // Sum modifiers from dynamic form fields
+      effectiveCustomSections.forEach(sec => {
+        if (sec.enabled !== false && sec.fields) {
+          sec.fields.forEach(field => {
+            const fId = field.id;
+            const userVal = dynamicValues[fId];
+            if (['dropdown', 'radio', 'orientation'].includes(field.type) && field.options) {
+              const match = field.options.find(o => (o.value || o.label || o) === userVal);
               if (match && match.priceModifier) {
+                // Modifiers are per-unit. So they add directly to totalModifiers
                 totalModifiers += Number(match.priceModifier) || 0;
               }
-            });
-          }
-        });
-      }
-    });
-
-    // Legacy variants sum fallback if no dynamic modifiers found
-    if (totalModifiers === 0) {
+            } else if (field.type === 'checkbox' && Array.isArray(userVal) && field.options) {
+              userVal.forEach(val => {
+                const match = field.options.find(o => (o.value || o.label || o) === val);
+                if (match && match.priceModifier) {
+                  totalModifiers += Number(match.priceModifier) || 0;
+                }
+              });
+            }
+          });
+        }
+      });
+    } else {
+      // Legacy variants sum fallback if no dynamic modifiers are configured
       Object.entries(effectiveVariants).forEach(([key, options]) => {
         if (key === 'customAreaPricing') return;
         if (Array.isArray(options) && options.length > 0) {
@@ -278,6 +295,7 @@ export function ProductDetailPage({ product, onBack, onNavigateCart, allProducts
 
   const totalPrice = calculatePrice();
   const unitPrice = Math.max(0.01, Math.round((totalPrice / Math.max(1, quantity)) * 100) / 100);
+  const pUnit = product.unit || 'pcs';
 
   const handleOptionChange = (key, optionName) => {
     setSelectedVariants((prev) => ({
@@ -286,19 +304,24 @@ export function ProductDetailPage({ product, onBack, onNavigateCart, allProducts
     }));
   };
 
+  const dynamicOptionsSummaryForUI = {};
+  effectiveCustomSections.forEach(sec => {
+    if (sec.enabled !== false && sec.fields) {
+      sec.fields.forEach(field => {
+        const val = dynamicValues[field.id];
+        if (val !== undefined && val !== '') {
+          dynamicOptionsSummaryForUI[field.label] = Array.isArray(val) ? val.join(', ') : val;
+        }
+      });
+    }
+  });
+
+  const displayOptions = hasDynamicFields ? dynamicOptionsSummaryForUI : selectedVariants;
+
+
   const handleAddToCart = () => {
-    // Construct readable summary of dynamic field selections for cart/orders
-    const dynamicOptionsSummary = {};
-    effectiveCustomSections.forEach(sec => {
-      if (sec.enabled !== false && sec.fields) {
-        sec.fields.forEach(field => {
-          const val = dynamicValues[field.id];
-          if (val !== undefined && val !== '') {
-            dynamicOptionsSummary[field.label] = Array.isArray(val) ? val.join(', ') : val;
-          }
-        });
-      }
-    });
+    // Use already calculated summary
+    const dynamicOptionsSummary = dynamicOptionsSummaryForUI;
 
     addToCart({
       id: product.id,
@@ -378,7 +401,7 @@ export function ProductDetailPage({ product, onBack, onNavigateCart, allProducts
 
   return (
     <div className="bg-white font-sans min-h-screen text-slate-900 pb-20">
-      
+
       {/* Top Breadcrumb Header Bar */}
       <div className="bg-slate-50 border-b border-slate-200 py-3.5 px-4 sm:px-8 sticky top-0 z-30 backdrop-blur-md bg-white/90">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
@@ -402,16 +425,16 @@ export function ProductDetailPage({ product, onBack, onNavigateCart, allProducts
       {/* Main Container */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
-          
+
           {/* LEFT COLUMN: PRODUCT IMAGES & GALLERY (5 cols) */}
           <div className="lg:col-span-5 sticky top-20 self-start space-y-4">
-            
+
             {/* Stage Image Container (Matching Screenshot 1) */}
             <div className="relative bg-[#F2F4F7] rounded-3xl overflow-hidden border border-slate-200/90 shadow-xs h-[380px] sm:h-[450px] flex items-center justify-center group">
               {selectedImage ? (
-                <img 
-                  src={selectedImage} 
-                  alt={product.title} 
+                <img
+                  src={selectedImage}
+                  alt={product.title}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
                 />
               ) : (
@@ -453,11 +476,10 @@ export function ProductDetailPage({ product, onBack, onNavigateCart, allProducts
                     key={idx}
                     type="button"
                     onClick={() => setSelectedImage(img)}
-                    className={`w-20 h-20 rounded-2xl overflow-hidden border-2 transition-all cursor-pointer shrink-0 ${
-                      selectedImage === img 
-                        ? 'border-[#EA580C] ring-2 ring-[#EA580C]/20 scale-105' 
-                        : 'border-slate-200 opacity-80 hover:opacity-100'
-                    }`}
+                    className={`w-20 h-20 rounded-2xl overflow-hidden border-2 transition-all cursor-pointer shrink-0 ${selectedImage === img
+                      ? 'border-[#EA580C] ring-2 ring-[#EA580C]/20 scale-105'
+                      : 'border-slate-200 opacity-80 hover:opacity-100'
+                      }`}
                   >
                     <img src={img} alt="Thumbnail" className="w-full h-full object-cover" />
                   </button>
@@ -484,7 +506,7 @@ export function ProductDetailPage({ product, onBack, onNavigateCart, allProducts
 
           {/* RIGHT COLUMN: PRODUCT CONFIGURATION & ORDER SUMMARY (7 cols) */}
           <div className="lg:col-span-7 space-y-6">
-            
+
             {/* Header Information (Matching Screenshot 1) */}
             <div className="space-y-2.5">
               {/* Category Pill Tag */}
@@ -506,8 +528,8 @@ export function ProductDetailPage({ product, onBack, onNavigateCart, allProducts
                     <FiStar key={i} className="w-4 h-4 fill-amber-400" />
                   ))}
                 </div>
-                <span className="font-extrabold text-slate-900">4.7</span>
-                <span className="text-slate-500 font-medium">(226 reviews)</span>
+                <span className="font-extrabold text-slate-900">{avgRating}</span>
+                <span className="text-slate-500 font-medium">({totalReviews} reviews)</span>
               </div>
 
               {/* Price Range Sub-Header (Matching Screenshot 1) */}
@@ -517,7 +539,7 @@ export function ProductDetailPage({ product, onBack, onNavigateCart, allProducts
                   ₹{lowestPrice.toFixed(2)}
                 </span>
                 <span className="text-sm font-medium text-slate-500">
-                  for {lowestQty} cards
+                  for {lowestQty} {pUnit}
                 </span>
               </div>
             </div>
@@ -584,17 +606,14 @@ export function ProductDetailPage({ product, onBack, onNavigateCart, allProducts
                   </label>
                   {activeTier && (
                     <span className="text-[11px] font-extrabold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                      Tier Rate: ₹{activeTier.pricePerUnit}/pc
+                      Tier Rate: ₹{activeTier.pricePerUnit}/{pUnit === 'pcs' ? 'pc' : pUnit.replace(/s$/, '')}
                     </span>
                   )}
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {(product.tieredPricing && product.tieredPricing.length > 0 ? product.tieredPricing : [
-                    { tierMin: 300, pricePerUnit: 1.83 },
-                    { tierMin: 500, pricePerUnit: 1.60 },
-                    { tierMin: 800, pricePerUnit: 1.31 },
-                    { tierMin: 1000, pricePerUnit: 1.30 }
+                    { tierMin: product.minOrderQty || 100, pricePerUnit: product.basePrice || 5.0 }
                   ]).map((t, idx) => {
                     const isSelected = !isCustomQty && quantity === t.tierMin;
                     return (
@@ -605,15 +624,14 @@ export function ProductDetailPage({ product, onBack, onNavigateCart, allProducts
                           setIsCustomQty(false);
                           setQuantity(t.tierMin);
                         }}
-                        className={`p-3 rounded-xl text-center border-2 transition-all cursor-pointer flex flex-col items-center justify-center gap-0.5 ${
-                          isSelected
-                            ? 'bg-[#FFF7ED] border-[#EA580C] text-[#EA580C] shadow-3xs'
-                            : 'bg-white border-slate-200 text-slate-800 hover:border-orange-300'
-                        }`}
+                        className={`p-3 rounded-xl text-center border-2 transition-all cursor-pointer flex flex-col items-center justify-center gap-0.5 ${isSelected
+                          ? 'bg-[#FFF7ED] border-[#EA580C] text-[#EA580C] shadow-3xs'
+                          : 'bg-white border-slate-200 text-slate-800 hover:border-orange-300'
+                          }`}
                       >
-                        <span className="font-black text-[14px]">{t.tierMin.toLocaleString()} pcs</span>
+                        <span className="font-black text-[14px]">{t.tierMin.toLocaleString()} {pUnit}</span>
                         <span className={`text-[11.5px] font-medium ${isSelected ? 'text-[#EA580C]' : 'text-slate-500'}`}>
-                          ₹{t.pricePerUnit.toFixed(2)}/pc
+                          ₹{t.pricePerUnit.toFixed(2)}/{pUnit === 'pcs' ? 'pc' : pUnit.replace(/s$/, '')}
                         </span>
                       </button>
                     );
@@ -723,9 +741,9 @@ export function ProductDetailPage({ product, onBack, onNavigateCart, allProducts
 
                 <div className="space-y-2.5 text-[13.5px]">
                   {/* Selected Options List */}
-                  {Object.entries(selectedVariants).map(([key, val]) => (
+                  {Object.entries(displayOptions).map(([key, val]) => (
                     <div key={key} className="flex items-center justify-between font-medium">
-                      <span className="text-slate-400">{formatKeyToTitle(key)}</span>
+                      <span className="text-slate-400">{hasDynamicFields ? key : formatKeyToTitle(key)}</span>
                       <span className="font-bold text-white text-right">{val}</span>
                     </div>
                   ))}
@@ -733,14 +751,14 @@ export function ProductDetailPage({ product, onBack, onNavigateCart, allProducts
                   {/* Quantity Row */}
                   <div className="flex items-center justify-between font-medium">
                     <span className="text-slate-400">Quantity</span>
-                    <span className="font-bold text-white">{quantity.toLocaleString()}</span>
+                    <span className="font-bold text-white">{quantity.toLocaleString()} {pUnit}</span>
                   </div>
 
                   <div className="pt-2 border-t border-slate-800 space-y-2">
                     {/* Unit Price Row */}
                     <div className="flex items-center justify-between font-medium">
                       <span className="text-slate-400">Unit Price</span>
-                      <span className="font-bold text-white font-mono">₹{unitPrice.toFixed(2)}/pc</span>
+                      <span className="font-bold text-white font-mono">₹{unitPrice.toFixed(2)}/{pUnit === 'pcs' ? 'pc' : pUnit.replace(/s$/, '')}</span>
                     </div>
 
                     {/* Total Row */}
@@ -877,7 +895,7 @@ export function ProductDetailPage({ product, onBack, onNavigateCart, allProducts
       </div>
 
       {/* GOOGLE REVIEWS SECTION (Matching Screenshot 2) */}
-      <GoogleReviewsSection />
+      <GoogleReviewsSection reviews={testimonials} avgRating={avgRating} totalReviews={totalReviews} />
 
       {/* DYNAMIC RELATED PRODUCTS SECTION (Matching Screenshot 3) */}
       {relatedProductsList.length > 0 && (

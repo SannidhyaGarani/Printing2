@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { Plus, Trash2, X, Sliders, Layers, CheckSquare, Type, Hash, List, Radio } from 'lucide-react';
+import { Plus, Trash2, X, Sliders, Layers, CheckSquare, Type, Hash, List, Radio, Maximize2, AlignJustify, AlignCenter } from 'lucide-react';
 import { generateId } from '../../../../utils/customSectionsHelper';
 
 export const DynamicFormBuilder = ({ customSections = [], onChange }) => {
 
   // Update a section by ID
   const updateSection = (sectionId, updatedData) => {
-    const next = customSections.map(sec => 
+    const next = customSections.map(sec =>
       sec.id === sectionId ? { ...sec, ...updatedData } : sec
     );
     onChange(next);
@@ -70,7 +70,7 @@ export const DynamicFormBuilder = ({ customSections = [], onChange }) => {
     const targetSection = customSections.find(sec => sec.id === sectionId);
     if (!targetSection) return;
 
-    const updatedFields = (targetSection.fields || []).map(f => 
+    const updatedFields = (targetSection.fields || []).map(f =>
       f.id === fieldId ? { ...f, ...updatedFieldData } : f
     );
 
@@ -139,7 +139,7 @@ export const DynamicFormBuilder = ({ customSections = [], onChange }) => {
 
   return (
     <div className="space-y-6">
-      
+
       {/* Top Section Header & Global Add Button */}
       <div className="bg-gradient-to-r from-blue-900 via-[#07152F] to-slate-900 p-5 rounded-2xl text-white shadow-md flex items-center justify-between flex-wrap gap-4">
         <div>
@@ -182,9 +182,8 @@ export const DynamicFormBuilder = ({ customSections = [], onChange }) => {
           {customSections.map((sec, secIdx) => (
             <div
               key={sec.id || secIdx}
-              className={`bg-white rounded-2xl border shadow-3xs transition-all ${
-                sec.enabled !== false ? 'border-slate-200/90' : 'border-slate-200 bg-slate-50/50 opacity-75'
-              }`}
+              className={`bg-white rounded-2xl border shadow-3xs transition-all ${sec.enabled !== false ? 'border-slate-200/90' : 'border-slate-200 bg-slate-50/50 opacity-75'
+                }`}
             >
               {/* SECTION HEADER BAR */}
               <div className="bg-slate-100/70 p-4 rounded-t-2xl border-b border-slate-200 flex items-center justify-between gap-3 flex-wrap">
@@ -208,11 +207,10 @@ export const DynamicFormBuilder = ({ customSections = [], onChange }) => {
                   <button
                     type="button"
                     onClick={() => updateSection(sec.id, { enabled: sec.enabled === false })}
-                    className={`px-3 py-1 rounded-lg text-[11px] font-black cursor-pointer border transition ${
-                      sec.enabled !== false
+                    className={`px-3 py-1 rounded-lg text-[11px] font-black cursor-pointer border transition ${sec.enabled !== false
                         ? 'bg-emerald-600 text-white border-emerald-600'
                         : 'bg-slate-200 text-slate-600 border-slate-300'
-                    }`}
+                      }`}
                   >
                     {sec.enabled !== false ? 'ENABLED' : 'DISABLED'}
                   </button>
@@ -269,6 +267,7 @@ export const DynamicFormBuilder = ({ customSections = [], onChange }) => {
                             <option value="number">Number Input (Numeric)</option>
                             <option value="radio">Radio Buttons (Single choice)</option>
                             <option value="checkbox">Checkboxes (Multiple choice)</option>
+                            <option value="orientation">Orientation Selector</option>
                           </select>
                         </div>
 
@@ -276,11 +275,10 @@ export const DynamicFormBuilder = ({ customSections = [], onChange }) => {
                           <button
                             type="button"
                             onClick={() => updateField(sec.id, field.id, { required: !field.required })}
-                            className={`w-full py-2 px-2.5 rounded-xl text-[11px] font-black border cursor-pointer transition ${
-                              field.required
+                            className={`w-full py-2 px-2.5 rounded-xl text-[11px] font-black border cursor-pointer transition ${field.required
                                 ? 'bg-blue-600 text-white border-blue-600 shadow-3xs'
                                 : 'bg-slate-200 text-slate-600 border-slate-300'
-                            }`}
+                              }`}
                           >
                             {field.required ? 'REQUIRED: ON' : 'REQUIRED: OFF'}
                           </button>
@@ -320,8 +318,8 @@ export const DynamicFormBuilder = ({ customSections = [], onChange }) => {
                         </div>
                       </div>
 
-                      {/* OPTIONS MANAGER (For Dropdown, Radio, Checkbox) */}
-                      {['dropdown', 'radio', 'checkbox'].includes(field.type) && (
+                      {/* OPTIONS MANAGER (For Dropdown, Radio, Checkbox, Orientation) */}
+                      {['dropdown', 'radio', 'checkbox', 'orientation'].includes(field.type) && (
                         <div className="pt-2 border-t border-slate-200/80 space-y-2">
                           <div className="flex items-center justify-between">
                             <span className="text-[10.5px] font-black uppercase text-blue-800 tracking-wider flex items-center gap-1">
@@ -336,42 +334,86 @@ export const DynamicFormBuilder = ({ customSections = [], onChange }) => {
                             </button>
                           </div>
 
-                          <div className="space-y-1.5">
-                            {(field.options || []).map((opt, oIdx) => (
-                              <div key={opt.id || oIdx} className="flex items-center gap-2 bg-white p-2 rounded-xl border border-slate-200 shadow-2xs">
-                                <span className="text-[11px] font-bold text-slate-400 w-5 shrink-0 text-center">
-                                  {oIdx + 1}.
-                                </span>
-                                <input
-                                  type="text"
-                                  value={opt.label || ''}
-                                  onChange={(e) => updateOption(sec.id, field.id, opt.id, { label: e.target.value, value: e.target.value })}
-                                  placeholder="Option Label (e.g. Black and White)"
-                                  className="flex-1 p-1.5 rounded-lg border border-slate-200 font-bold text-slate-800 text-[13px] bg-white focus:outline-none focus:border-blue-500"
-                                />
-                                <div className="relative w-28 shrink-0">
-                                  <span className="absolute left-2 top-1.5 text-[11px] font-bold text-slate-400">₹</span>
+                          {field.type === 'orientation' ? (
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                              {(field.options || []).map((opt) => (
+                                <div key={opt.id} className="relative flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl border-2 border-blue-600 bg-blue-50 text-blue-700 shadow-sm transition-all font-extrabold text-[13px]">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteOption(sec.id, field.id, opt.id)}
+                                    className="absolute top-2 right-2 text-slate-400 hover:text-red-600 p-1 rounded-full hover:bg-red-50 border-none bg-transparent cursor-pointer transition"
+                                    title="Delete Option"
+                                  >
+                                    <X className="w-3.5 h-3.5" />
+                                  </button>
+
+                                  <div className="w-10 h-7 rounded-lg border-2 border-blue-500 bg-blue-100 flex items-center justify-center">
+                                    {opt.value.toLowerCase().includes('portrait') || opt.label.toLowerCase().includes('portrait') ? (
+                                      <AlignCenter className="w-4 h-4 text-blue-600" />
+                                    ) : (
+                                      <AlignJustify className="w-4 h-4 text-blue-600" />
+                                    )}
+                                  </div>
+
                                   <input
-                                    type="number"
-                                    step="0.5"
-                                    value={opt.priceModifier !== undefined ? opt.priceModifier : 0}
-                                    onChange={(e) => updateOption(sec.id, field.id, opt.id, { priceModifier: parseFloat(e.target.value) || 0 })}
-                                    placeholder="+ Price"
-                                    className="w-full pl-5 pr-2 py-1.5 rounded-lg border border-slate-200 font-bold text-slate-800 text-[12.5px] bg-white focus:outline-none focus:border-blue-500 text-right"
-                                    title="Price adjustment (+/- ₹)"
+                                    type="text"
+                                    value={opt.label || ''}
+                                    onChange={(e) => updateOption(sec.id, field.id, opt.id, { label: e.target.value, value: e.target.value })}
+                                    placeholder="e.g. Landscape"
+                                    className="w-full text-center p-1 rounded-md border border-blue-200 font-extrabold text-blue-800 text-[12px] bg-white focus:outline-none focus:border-blue-500"
                                   />
+                                  <div className="flex items-center gap-1 w-full relative">
+                                    <span className="absolute left-1 top-1.5 text-[10px] font-bold text-slate-400">₹</span>
+                                    <input
+                                      type="number"
+                                      step="0.5"
+                                      value={opt.priceModifier !== undefined ? opt.priceModifier : 0}
+                                      onChange={(e) => updateOption(sec.id, field.id, opt.id, { priceModifier: parseFloat(e.target.value) || 0 })}
+                                      placeholder="+ Price"
+                                      className="w-full pl-4 pr-1 py-1 rounded-md border border-blue-200 font-bold text-blue-800 text-[12px] bg-white focus:outline-none focus:border-blue-500 text-center"
+                                    />
+                                  </div>
                                 </div>
-                                <button
-                                  type="button"
-                                  onClick={() => handleDeleteOption(sec.id, field.id, opt.id)}
-                                  className="p-1 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 border-none bg-transparent cursor-pointer transition"
-                                  title="Delete Option (✕)"
-                                >
-                                  <X className="w-3.5 h-3.5 text-slate-400 hover:text-red-600" />
-                                </button>
-                              </div>
-                            ))}
-                          </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="space-y-1.5">
+                              {(field.options || []).map((opt, oIdx) => (
+                                <div key={opt.id || oIdx} className="flex items-center gap-2 bg-white p-2 rounded-xl border border-slate-200 shadow-2xs">
+                                  <span className="text-[11px] font-bold text-slate-400 w-5 shrink-0 text-center">
+                                    {oIdx + 1}.
+                                  </span>
+                                  <input
+                                    type="text"
+                                    value={opt.label || ''}
+                                    onChange={(e) => updateOption(sec.id, field.id, opt.id, { label: e.target.value, value: e.target.value })}
+                                    placeholder="Option Label (e.g. Black and White)"
+                                    className="flex-1 p-1.5 rounded-lg border border-slate-200 font-bold text-slate-800 text-[13px] bg-white focus:outline-none focus:border-blue-500"
+                                  />
+                                  <div className="relative w-28 shrink-0">
+                                    <span className="absolute left-2 top-1.5 text-[11px] font-bold text-slate-400">₹</span>
+                                    <input
+                                      type="number"
+                                      step="0.5"
+                                      value={opt.priceModifier !== undefined ? opt.priceModifier : 0}
+                                      onChange={(e) => updateOption(sec.id, field.id, opt.id, { priceModifier: parseFloat(e.target.value) || 0 })}
+                                      placeholder="+ Price"
+                                      className="w-full pl-5 pr-2 py-1.5 rounded-lg border border-slate-200 font-bold text-slate-800 text-[12.5px] bg-white focus:outline-none focus:border-blue-500 text-right"
+                                      title="Price adjustment (+/- ₹)"
+                                    />
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteOption(sec.id, field.id, opt.id)}
+                                    className="p-1 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 border-none bg-transparent cursor-pointer transition"
+                                    title="Delete Option (✕)"
+                                  >
+                                    <X className="w-3.5 h-3.5 text-slate-400 hover:text-red-600" />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>

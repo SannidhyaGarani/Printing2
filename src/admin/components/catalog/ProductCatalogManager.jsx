@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { useAdmin } from '../../context/AdminContext';
 import { uploadToCloudinary } from '../../../services/cloudinary';
-import { DEFAULT_CATALOG_OPTIONS } from '../../../services/firebase';
+import { DEFAULT_CATALOG_OPTIONS, subscribeToHomepageCategories } from '../../../services/firebase';
 
 // Sub-Section Components
 import { FormSectionCustomizerToolbar } from './sections/FormSectionCustomizerToolbar';
@@ -263,11 +263,11 @@ const VariantSectionCard = React.memo(({
 // Main Component: ProductCatalogManager
 // ============================================================================
 export const ProductCatalogManager = () => {
-  const { 
-    products, 
-    saveProduct, 
-    removeProduct, 
-    categories, 
+  const {
+    products,
+    saveProduct,
+    removeProduct,
+    categories,
     deleteCategory,
     catalogOptions,
     updateCatalogOptions,
@@ -281,6 +281,17 @@ export const ProductCatalogManager = () => {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [homepageCats, setHomepageCats] = useState([]);
+
+  React.useEffect(() => {
+    const unsub = subscribeToHomepageCategories((data) => {
+      setHomepageCats(data && data.length > 0 ? data : [
+        { id: 'cat_1', title: 'Business Cards', query: 'business-cards' },
+        { id: 'cat_2', title: 'Brochures & Flyers', query: 'brochures' }
+      ]);
+    });
+    return () => unsub();
+  }, []);
 
   // Category & Subcategory Quick-Add States
   const [isCategorySidebarOpen, setIsCategorySidebarOpen] = useState(false);
@@ -328,11 +339,7 @@ export const ProductCatalogManager = () => {
     },
     images: [],
     variants: catalogOptions || {},
-    tieredPricing: [
-      { tierMin: 100, pricePerUnit: 6.0 },
-      { tierMin: 500, pricePerUnit: 5.0 },
-      { tierMin: 1000, pricePerUnit: 4.0 }
-    ],
+    tieredPricing: [],
     seo: {
       metaTitle: '',
       metaDescription: '',
@@ -386,12 +393,7 @@ export const ProductCatalogManager = () => {
         packagingStyle: catalogOptions?.packagingStyle ?? DEFAULT_CATALOG_OPTIONS.packagingStyle,
         customAreaPricing: catalogOptions?.customAreaPricing ?? DEFAULT_CATALOG_OPTIONS.customAreaPricing
       },
-      tieredPricing: [
-        { tierMin: 300, pricePerUnit: 5.5 },
-        { tierMin: 500, pricePerUnit: 4.8 },
-        { tierMin: 1000, pricePerUnit: 4.0 },
-        { tierMin: 2500, pricePerUnit: 3.2 }
-      ],
+      tieredPricing: [],
       seo: { metaTitle: '', metaDescription: '', indexable: true }
     });
     setIsCreating(true);
@@ -724,8 +726,8 @@ export const ProductCatalogManager = () => {
               type="button"
               onClick={() => setSelectedCategory(cat)}
               className={`px-3 py-1.5 rounded-xl font-bold text-[14px] shrink-0 cursor-pointer transition border ${selectedCategory === cat
-                  ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
-                  : 'bg-slate-50 text-slate-600 border-slate-200 hover:border-slate-300'
+                ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                : 'bg-slate-50 text-slate-600 border-slate-200 hover:border-slate-300'
                 }`}
             >
               {cat}
@@ -905,33 +907,35 @@ export const ProductCatalogManager = () => {
                 type="button"
                 onClick={() => setFormActiveTab('general')}
                 className={`px-4 py-2 rounded-xl text-[13.5px] font-bold transition-all flex items-center gap-2 cursor-pointer border ${formActiveTab === 'general'
-                    ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
-                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
+                  ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                  : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
                   }`}
               >
-                <Package className="w-4 h-4" /> 1. Core Info, Tech Specs & Media
+                <Package className="w-4 h-4" /> 1. Core Info & Dynamic Form Builder
               </button>
 
+              {/* Tab 2: Tiered Quantity Pricing */}
               <button
                 type="button"
                 onClick={() => setFormActiveTab('tiered')}
                 className={`px-4 py-2 rounded-xl text-[13.5px] font-bold transition-all flex items-center gap-2 cursor-pointer border ${formActiveTab === 'tiered'
-                    ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
-                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
+                  ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                  : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
                   }`}
               >
-                <DollarSign className="w-4 h-4" /> 2. Tiered Quantity Pricing Grid ({formData.tieredPricing?.length || 0})
+                <DollarSign className="w-4 h-4" /> 2. Volume Tier Pricing
               </button>
 
+              {/* Tab 3: Options Matrices */}
               <button
                 type="button"
                 onClick={() => setFormActiveTab('variants')}
                 className={`px-4 py-2 rounded-xl text-[13.5px] font-bold transition-all flex items-center gap-2 cursor-pointer border ${formActiveTab === 'variants'
-                    ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
-                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
+                  ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                  : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
                   }`}
               >
-                <Layers className="w-4 h-4" /> 3. Options & Finishes Matrix (12 Sections)
+                <Layers className="w-4 h-4" /> 3. Options Matrices
               </button>
             </div>
 
@@ -946,8 +950,8 @@ export const ProductCatalogManager = () => {
                     formData={formData}
                     setFormData={setFormData}
                     products={products}
-                    megamenuCategories={megamenuCategories}
-                    updateMegamenuCategories={updateMegamenuCategories}
+                    megamenuCategories={homepageCats}
+                    updateMegamenuCategories={null} // Handled by inner saveHomepageCategory call directly
                     showInlineCatInput={showInlineCatInput}
                     setShowInlineCatInput={setShowInlineCatInput}
                     inlineCatInput={inlineCatInput}
@@ -958,11 +962,11 @@ export const ProductCatalogManager = () => {
                     setInlineSubcatInput={setInlineSubcatInput}
                   />
 
-                  {/* Form Section Customizer Toolbar */}
-                  <FormSectionCustomizerToolbar
+                  {/* Form Section Customizer Toolbar HIDDEN */}
+                  {/* <FormSectionCustomizerToolbar
                     formData={formData}
                     setFormData={setFormData}
-                  />
+                  /> */}
 
                   {/* DYNAMIC PRODUCT FORM BUILDER & SECTION CUSTOMIZER */}
                   <DynamicFormBuilder
@@ -970,16 +974,16 @@ export const ProductCatalogManager = () => {
                     onChange={(updatedSections) => setFormData({ ...formData, customSections: updatedSections })}
                   />
 
-                  {/* Optional Orientation & Paper Sizes Card */}
+                  {/* Optional Paper Sizes Card (Orientation Hidden) */}
                   {(formData.enableOrientation !== false || formData.enablePaperSizes !== false) && (
                     <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-3xs space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <OrientationSection
+                      <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
+                        {/* <OrientationSection
                           formData={formData}
                           setFormData={setFormData}
                           catalogOptions={catalogOptions}
                           updateCatalogOptions={updateCatalogOptions}
-                        />
+                        /> */}
                         <PaperSizesSection
                           formData={formData}
                           setFormData={setFormData}
@@ -990,8 +994,8 @@ export const ProductCatalogManager = () => {
                     </div>
                   )}
 
-                  {/* Technical Specifications Section */}
-                  <TechSpecsSection
+                  {/* Technical Specifications Section HIDDEN */}
+                  {/* <TechSpecsSection
                     formData={formData}
                     setFormData={setFormData}
                     newSpecKey={newSpecKey}
@@ -1000,7 +1004,7 @@ export const ProductCatalogManager = () => {
                     setNewSpecVal={setNewSpecVal}
                     catalogOptions={catalogOptions}
                     updateCatalogOptions={updateCatalogOptions}
-                  />
+                  /> */}
 
                   {/* Dynamic Custom Printing Engines */}
                   <NcrEngineSection
@@ -1151,11 +1155,10 @@ export const ProductCatalogManager = () => {
                         key={f.id}
                         type="button"
                         onClick={() => setVariantFilterCategory(f.id)}
-                        className={`px-3 py-1.5 rounded-xl font-extrabold text-[12px] shrink-0 border cursor-pointer transition ${
-                          variantFilterCategory === f.id
-                            ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
-                            : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
-                        }`}
+                        className={`px-3 py-1.5 rounded-xl font-extrabold text-[12px] shrink-0 border cursor-pointer transition ${variantFilterCategory === f.id
+                          ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
+                          : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
+                          }`}
                       >
                         {f.label}
                       </button>

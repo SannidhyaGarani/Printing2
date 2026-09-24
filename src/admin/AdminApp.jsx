@@ -28,14 +28,14 @@ const AdminContent = ({ onSwitchToWebsite }) => {
         return <DashboardOverview />;
       case 'orders':
         return <OrderPipelineHub />;
-      case 'design_desk':
-        return <DesignTicketDesk />;
+      // case 'design_desk':
+      //   return <DesignTicketDesk />;
       case 'catalog':
         return <ProductCatalogManager />;
-      case 'print_matrix':
-        return <PrintOptionsMatrixManager />;
-      case 'category_manager':
-        return <CategoryManager />;
+      // case 'print_matrix':
+      //   return <PrintOptionsMatrixManager />;
+      // case 'category_manager':
+      //   return <CategoryManager />;
       case 'homepage_customizer':
         return <HomepageManager />;
       case 'pricing':
@@ -56,8 +56,8 @@ const AdminContent = ({ onSwitchToWebsite }) => {
   return (
     <div className="flex h-screen bg-[#F8FAFC] text-slate-900 font-sans overflow-hidden antialiased selection:bg-blue-600 selection:text-white">
       {/* Sidebar (Desktop + Mobile Drawer) */}
-      <AdminSidebar 
-        onSwitchToWebsite={onSwitchToWebsite} 
+      <AdminSidebar
+        onSwitchToWebsite={onSwitchToWebsite}
         isMobileOpen={mobileSidebarOpen}
         onCloseMobileSidebar={() => setMobileSidebarOpen(false)}
       />
@@ -65,7 +65,7 @@ const AdminContent = ({ onSwitchToWebsite }) => {
       {/* Main Backoffice Container */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Header Bar */}
-        <AdminHeader 
+        <AdminHeader
           onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
         />
 

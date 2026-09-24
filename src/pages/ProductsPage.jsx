@@ -1,16 +1,16 @@
 import { useState, useEffect } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
-import { 
-  FiArrowRight, 
-  FiCheck, 
-  FiFilter, 
-  FiUploadCloud, 
-  FiX, 
-  FiShoppingBag, 
-  FiStar, 
-  FiSliders, 
-  FiHeart, 
-  FiPlusCircle, 
+import {
+  FiArrowRight,
+  FiCheck,
+  FiFilter,
+  FiUploadCloud,
+  FiX,
+  FiShoppingBag,
+  FiStar,
+  FiSliders,
+  FiHeart,
+  FiPlusCircle,
   FiSearch,
   FiZap,
   FiClock,
@@ -42,257 +42,7 @@ export const getCanonicalCategory = (categoryName) => {
   return categoryName;
 };
 
-export const FALLBACK_PRODUCTS = [
-  // ── Business Cards ──
-  {
-    id: 'prod-bc-1',
-    title: 'Standard Business Cards',
-    slug: 'standard-business-cards',
-    category: 'Business Cards',
-    subcategory: 'Standard Cards',
-    finish: 'Matte/Gloss',
-    turnaround: 'Express (24-48h)',
-    orientation: 'horizontal',
-    paperSizes: ['A4', 'Custom'],
-    basePrice: 299,
-    summary: 'Classic 350 GSM premium art card with crisp offset color printing.',
-    description: 'High quality executive business cards printed on thick 350 GSM paper stock with smooth matte or gloss lamination.',
-    image: 'https://images.unsplash.com/photo-1589829085413-56de8ae18c73?q=80&w=800',
-    tags: ['Standard Cards', 'Business Cards', 'Stationery'],
-    searchAliases: ['standard cards', 'visiting card', 'business card']
-  },
-  {
-    id: 'prod-bc-2',
-    title: 'Spot UV Business Cards',
-    slug: 'spot-uv-business-cards',
-    category: 'Business Cards',
-    subcategory: 'Spot UV Cards',
-    finish: 'Spot UV',
-    turnaround: 'Express (24-48h)',
-    orientation: 'horizontal',
-    paperSizes: ['A4', 'Custom'],
-    basePrice: 599,
-    summary: 'Tactile 3D raised gloss UV varnish accents on logo and titles.',
-    description: 'Make your logo pop with elevated 3D high-gloss UV coating over a velvet soft-touch matte finish.',
-    image: 'https://images.unsplash.com/photo-1616469829941-c7200edec809?q=80&w=800',
-    tags: ['Spot UV Cards', 'Spot UV', 'Business Cards'],
-    searchAliases: ['spot uv cards', 'uv card', 'gloss card']
-  },
-  {
-    id: 'prod-bc-3',
-    title: 'Metallic Foil Business Cards',
-    slug: 'metallic-foil-business-cards',
-    category: 'Business Cards',
-    subcategory: 'Metallic Foil Cards',
-    finish: 'Metallic Foil',
-    turnaround: 'Standard (3-5 Days)',
-    orientation: 'horizontal',
-    paperSizes: ['A4', 'Custom'],
-    basePrice: 899,
-    summary: 'Hot stamped Gold, Silver, or Rose Gold foil accents.',
-    description: 'Luxury hot-stamping foil press on premium matte textured cotton cards.',
-    image: 'https://images.unsplash.com/photo-1589829085413-56de8ae18c73?q=80&w=800',
-    tags: ['Metallic Foil Cards', 'Gold Foil', 'Business Cards'],
-    searchAliases: ['metallic foil cards', 'gold foil', 'silver foil']
-  },
 
-  // ── Apparel ──
-  {
-    id: 'prod-app-1',
-    title: 'Custom Embroidered Corporate Polo T-Shirts',
-    slug: 'custom-tshirts-polos',
-    category: 'Apparel',
-    subcategory: 'Polo T-Shirts',
-    finish: 'Textured Paper',
-    turnaround: 'Express (24-48h)',
-    orientation: 'vertical',
-    paperSizes: ['Custom'],
-    basePrice: 599,
-    summary: '220 GSM 100% combed cotton pique polo t-shirts with chest logo embroidery.',
-    description: 'Premium staff uniforms and promotional event apparel with high-density thread embroidery.',
-    image: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=800',
-    tags: ['Polo T-Shirts', 'Custom T-Shirts & Polos', 'Apparel', 'T-Shirt'],
-    searchAliases: ['polo t-shirts', 'polo shirt', 't-shirt', 'apparel']
-  },
-  {
-    id: 'prod-app-2',
-    title: 'Custom Printed Round Neck T-Shirts',
-    slug: 'custom-roundneck-tshirts',
-    category: 'Apparel',
-    subcategory: 'Custom T-Shirts',
-    finish: 'Matte/Gloss',
-    turnaround: 'Express (24-48h)',
-    orientation: 'vertical',
-    paperSizes: ['Custom'],
-    basePrice: 399,
-    summary: '180 GSM bio-washed cotton t-shirts printed with full color DTF graphics.',
-    description: 'Soft cotton promotional round neck t-shirts for corporate teams and promotional giveaways.',
-    image: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=800',
-    tags: ['Custom T-Shirts', 'Apparel', 'T-Shirt'],
-    searchAliases: ['custom t-shirts', 'round neck', 'tshirt', 'apparel']
-  },
-
-  // ── Gifts ──
-  {
-    id: 'prod-gft-1',
-    title: 'Branded Ceramic Coffee Mugs',
-    slug: 'mugs-drinkware',
-    category: 'Gifts',
-    subcategory: 'Photo Mugs',
-    finish: 'Matte/Gloss',
-    turnaround: 'Express (24-48h)',
-    orientation: 'vertical',
-    paperSizes: ['Custom'],
-    basePrice: 249,
-    summary: '325ml dishwasher-safe ceramic mugs with vibrant sublimation photo printing.',
-    description: 'Classic white and inner-color ceramic mugs personalized with company logos, quotes, or photos.',
-    image: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?q=80&w=800',
-    tags: ['Photo Mugs', 'Mugs & Drinkware', 'Gifts', 'Mugs'],
-    searchAliases: ['photo mugs', 'mugs', 'mug', 'gifts']
-  },
-  {
-    id: 'prod-gft-2',
-    title: 'Customized Acrylic Photo Frame & Lamp',
-    slug: 'frames-lamps',
-    category: 'Gifts',
-    subcategory: 'Desk Accessories',
-    finish: 'Spot UV',
-    turnaround: 'Express (24-48h)',
-    orientation: 'vertical',
-    paperSizes: ['Custom'],
-    basePrice: 699,
-    summary: 'Warm LED illuminated custom photo acrylic plaque lamp.',
-    description: 'High resolution UV acrylic lamp frame designed for desk memory gifts and corporate awards.',
-    image: 'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?q=80&w=800',
-    tags: ['Desk Accessories', 'Frames & Lamps', 'Gifts'],
-    searchAliases: ['frames & lamps', 'photo frame', 'lamp', 'gifts']
-  },
-
-  // ── Invitations ──
-  {
-    id: 'prod-inv-1',
-    title: 'Luxury Wedding Invitation Suites',
-    slug: 'wedding-cards',
-    category: 'Invitations',
-    subcategory: 'Wedding Cards',
-    finish: 'Metallic Foil',
-    turnaround: 'Standard (3-5 Days)',
-    orientation: 'vertical',
-    paperSizes: ['A5', 'Custom'],
-    basePrice: 1299,
-    summary: 'Royal textured paper invitations with gold foil stamping and vellum wrap.',
-    description: 'Bespoke wedding card collection crafted with metallic foil embossing and wax seals.',
-    image: 'https://images.unsplash.com/photo-1519741497674-611481863552?q=80&w=800',
-    tags: ['Wedding Cards', 'Invitations', 'Cards'],
-    searchAliases: ['wedding cards', 'wedding invitation', 'invitation']
-  },
-  {
-    id: 'prod-inv-2',
-    title: 'Custom Birthday Invitation Cards',
-    slug: 'birthday-cards',
-    category: 'Invitations',
-    subcategory: 'Birthday Cards',
-    finish: 'Matte/Gloss',
-    turnaround: 'Express (24-48h)',
-    orientation: 'vertical',
-    paperSizes: ['A5', 'A4'],
-    basePrice: 499,
-    summary: 'Vibrant theme birthday invites on 300 GSM silk art paper.',
-    description: 'Personalized birthday party invitations with matching custom envelopes.',
-    image: 'https://images.unsplash.com/photo-1513151233558-d860c5398176?q=80&w=800',
-    tags: ['Birthday Cards', 'Invitations', 'Cards'],
-    searchAliases: ['birthday cards', 'birthday invite', 'invitation']
-  },
-
-  // ── Corporate Gifting ──
-  {
-    id: 'prod-cg-1',
-    title: 'Executive Corporate Gift Set',
-    slug: 'executive-gift-set',
-    category: 'Corporate Gifting',
-    subcategory: 'Executive Gift Sets',
-    finish: 'Metallic Foil',
-    turnaround: 'Standard (3-5 Days)',
-    orientation: 'horizontal',
-    paperSizes: ['Custom'],
-    basePrice: 1499,
-    summary: 'Premium gift set with branded notebook, metal pen, keychain, and bottle.',
-    description: 'Luxury executive combo set in a presentation box customized with metallic foil logo.',
-    image: 'https://images.unsplash.com/photo-1513885535751-8b9238bd345a?q=80&w=800',
-    tags: ['Executive Gift Sets', 'Corporate Gift Sets', 'Corporate Gifting'],
-    searchAliases: ['executive gift sets', 'gift set', 'corporate gift']
-  },
-  {
-    id: 'prod-cg-2',
-    title: 'Custom Printed Product Folding Carton Box',
-    slug: 'product-boxes',
-    category: 'Corporate Gifting',
-    subcategory: 'Custom Packaging Boxes',
-    finish: 'Soft-Touch Velvet',
-    turnaround: 'Standard (3-5 Days)',
-    orientation: 'horizontal',
-    paperSizes: ['Custom'],
-    basePrice: 899,
-    summary: '350 GSM custom die-cut product box with gloss foil branding.',
-    description: 'Custom sized folding cartons ideal for cosmetics, pharma, electronics, and retail packaging.',
-    image: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?q=80&w=800',
-    tags: ['Custom Packaging Boxes', 'Boxes', 'Corporate Gifting'],
-    searchAliases: ['custom packaging boxes', 'packaging box', 'box']
-  },
-
-  // ── Printing & Banners ──
-  {
-    id: 'prod-pr-1',
-    title: 'Flex Banner - Outdoor Vinyl Banner (Sq.Ft)',
-    slug: 'flex-banner',
-    category: 'Printing',
-    subcategory: 'Flex & Vinyl Banners',
-    finish: 'Vinyl Waterproof',
-    turnaround: 'Express (24-48h)',
-    orientation: 'horizontal',
-    paperSizes: ['Custom'],
-    basePrice: 18,
-    summary: 'Weatherproof high-resolution flex banner calculated per sq. feet.',
-    description: 'Heavy duty eco-solvent flex banners printed for outdoor hoardings and shopfront banners.',
-    image: 'https://images.unsplash.com/photo-1542744094-3a3172720177?q=80&w=800',
-    tags: ['Flex & Vinyl Banners', 'Flex Banner', 'Printing'],
-    searchAliases: ['flex banner', 'flex', 'banner', 'printing']
-  },
-  {
-    id: 'prod-pr-2',
-    title: 'GST Invoice / Bill Book (NCR)',
-    slug: 'bill-book',
-    category: 'Printing',
-    subcategory: 'GST Bill Books (NCR)',
-    finish: 'Matte/Gloss',
-    turnaround: 'Standard (3-5 Days)',
-    orientation: 'vertical',
-    paperSizes: ['A4', 'A5', '1/4 Size'],
-    basePrice: 120,
-    summary: 'Carbonless NCR duplicate/triplicate bill books with serial numbering.',
-    description: 'Duplicate or triplicate carbonless NCR paper receipt and invoice books.',
-    image: 'https://images.unsplash.com/photo-1563986768609-322da13575f3?q=80&w=800',
-    tags: ['GST Bill Books (NCR)', 'Bill Book', 'Printing'],
-    searchAliases: ['bill book', 'gst bill book', 'ncr book', 'rasid book']
-  },
-  {
-    id: 'prod-pr-3',
-    title: 'A4 Glossy Promotional Flyers & Leaflets',
-    slug: 'brochures-flyers',
-    category: 'Printing',
-    subcategory: 'Flyers & Pamphlets',
-    finish: 'Matte/Gloss',
-    turnaround: 'Express (24-48h)',
-    orientation: 'vertical',
-    paperSizes: ['A4', 'A5', 'A3'],
-    basePrice: 399,
-    summary: 'High-speed offset printed marketing flyers on 170 GSM gloss paper.',
-    description: 'Vibrant promotional leaflets perfect for retail offers, events, and trade shows.',
-    image: 'https://images.unsplash.com/photo-1563986768609-322da13575f3?q=80&w=800',
-    tags: ['Flyers & Pamphlets', 'Flyers', 'Pamphlets', 'Printing'],
-    searchAliases: ['flyers & pamphlets', 'flyers', 'parcha', 'pamphlet', 'leaflet']
-  }
-];
 
 export function ProductsPage({ onNavigateCart, setCurrentPage }) {
   const { addToCart, toggleWishlist, isInWishlist } = useAuth()
@@ -327,7 +77,7 @@ export function ProductsPage({ onNavigateCart, setCurrentPage }) {
   // Subscribe to live Firestore products
   useEffect(() => {
     const unsubscribe = subscribeToProducts((prods) => {
-      setLiveProducts(prods && prods.length > 0 ? prods : FALLBACK_PRODUCTS);
+      setLiveProducts(prods || []);
       setLoadingProducts(false);
     });
     return () => unsubscribe();
@@ -345,7 +95,7 @@ export function ProductsPage({ onNavigateCart, setCurrentPage }) {
       setSearchTermState(q);
       setSelectedSubcategory('All');
 
-      const allProds = liveProducts.length > 0 ? liveProducts : FALLBACK_PRODUCTS;
+      const allProds = liveProducts;
       if (currentSku && allProds.length > 0) {
         const found = allProds.find(p => p.id === currentSku || p.slug === currentSku);
         if (found) setSelectedProductState(found);
@@ -403,12 +153,12 @@ export function ProductsPage({ onNavigateCart, setCurrentPage }) {
   };
 
   const categories = [
-    'All', 
-    'Business Cards', 
+    'All',
+    'Business Cards',
     'Apparel',
     'Gifts',
-    'Invitations', 
-    'Corporate Gifting', 
+    'Invitations',
+    'Corporate Gifting',
     'Printing'
   ];
 
@@ -428,14 +178,16 @@ export function ProductsPage({ onNavigateCart, setCurrentPage }) {
 
   const finishes = ['All', 'Spot UV', 'Metallic Foil', 'Soft-Touch Velvet', 'Die Cut', 'Textured Paper', 'Matte/Gloss', 'Vinyl Waterproof'];
 
-  const pool = liveProducts.length > 0 ? liveProducts : FALLBACK_PRODUCTS;
+  const pool = liveProducts;
 
   // Exact & Canonical Category Filtering
   const filteredProducts = pool.filter((p) => {
     const pCanonical = getCanonicalCategory(p.category);
-    
+
     // Category Matching
-    const matchesCategory = activeCategory === 'All' || pCanonical === activeCategory;
+    const matchesCategory = activeCategory === 'All' ||
+      pCanonical === activeCategory ||
+      (p.industries && Array.isArray(p.industries) && p.industries.some(i => i.toLowerCase() === activeCategory.toLowerCase()));
 
     // Subcategory Matching
     const matchesSubcategory = selectedSubcategory === 'All' ||
@@ -496,7 +248,7 @@ export function ProductsPage({ onNavigateCart, setCurrentPage }) {
 
   return (
     <div className="min-h-screen bg-[#FAFBFD] font-sans text-[#0B1633] pb-24">
-      
+
       {/* Hero Catalog Header Banner */}
       <div className="bg-gradient-to-r from-[#07152F] via-[#0B1A3A] to-[#12264F] text-white py-12 sm:py-16 px-4 sm:px-8 border-b border-slate-800 shadow-lg relative overflow-hidden">
         <div className="max-w-7xl mx-auto relative z-10 space-y-4">
@@ -552,7 +304,7 @@ export function ProductsPage({ onNavigateCart, setCurrentPage }) {
 
       {/* Catalog Main Layout */}
       <div id="catalog" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8">
-        
+
         {/* Results Bar & Active Filter Chips */}
         <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200/80 shadow-xs flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3 flex-wrap">
@@ -626,10 +378,10 @@ export function ProductsPage({ onNavigateCart, setCurrentPage }) {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          
+
           {/* LEFT COLUMN: FILTERS SIDEBAR (3 cols) */}
           <div className={`lg:col-span-3 space-y-6 ${isMobileFilterOpen ? 'block' : 'hidden lg:block'}`}>
-            
+
             {/* Categories Card */}
             <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-xs space-y-3">
               <h3 className="font-black text-xs uppercase tracking-wider text-slate-400 flex items-center justify-between border-b border-slate-100 pb-2.5">
@@ -639,26 +391,24 @@ export function ProductsPage({ onNavigateCart, setCurrentPage }) {
               <div className="space-y-1.5">
                 {categories.map((cat) => {
                   const isSelected = activeCategory === cat;
-                  
+
                   // Calculate exact matching count
-                  const catCount = cat === 'All' 
-                    ? pool.length 
+                  const catCount = cat === 'All'
+                    ? pool.length
                     : pool.filter(p => getCanonicalCategory(p.category) === cat).length;
 
                   return (
                     <button
                       key={cat}
                       onClick={() => setActiveCategory(cat)}
-                      className={`w-full text-left px-3.5 py-2.5 rounded-2xl text-[13px] font-extrabold transition-all flex items-center justify-between border cursor-pointer ${
-                        isSelected
-                          ? 'bg-[#FF5A1F] text-white border-[#FF5A1F] shadow-xs'
-                          : 'bg-slate-50 text-slate-700 border-slate-100 hover:bg-slate-100'
-                      }`}
+                      className={`w-full text-left px-3.5 py-2.5 rounded-2xl text-[13px] font-extrabold transition-all flex items-center justify-between border cursor-pointer ${isSelected
+                        ? 'bg-[#FF5A1F] text-white border-[#FF5A1F] shadow-xs'
+                        : 'bg-slate-50 text-slate-700 border-slate-100 hover:bg-slate-100'
+                        }`}
                     >
                       <span>{cat}</span>
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                        isSelected ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'
-                      }`}>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${isSelected ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'
+                        }`}>
                         {catCount}
                       </span>
                     </button>
@@ -680,11 +430,10 @@ export function ProductsPage({ onNavigateCart, setCurrentPage }) {
                       <button
                         key={sub}
                         onClick={() => setSelectedSubcategory(sub)}
-                        className={`w-full text-left px-3 py-2 rounded-xl text-[12px] font-bold transition border cursor-pointer ${
-                          isSelected
-                            ? 'bg-[#07152F] text-white border-[#07152F]'
-                            : 'bg-slate-50 text-slate-600 border-slate-100 hover:bg-slate-100'
-                        }`}
+                        className={`w-full text-left px-3 py-2 rounded-xl text-[12px] font-bold transition border cursor-pointer ${isSelected
+                          ? 'bg-[#07152F] text-white border-[#07152F]'
+                          : 'bg-slate-50 text-slate-600 border-slate-100 hover:bg-slate-100'
+                          }`}
                       >
                         {sub}
                       </button>
@@ -727,11 +476,10 @@ export function ProductsPage({ onNavigateCart, setCurrentPage }) {
                     <button
                       key={f}
                       onClick={() => setSelectedFinish(f)}
-                      className={`px-3 py-1 rounded-full text-[11px] font-bold border transition cursor-pointer ${
-                        isSelected
-                          ? 'bg-[#FF5A1F] text-white border-[#FF5A1F]'
-                          : 'bg-slate-50 text-slate-600 border-slate-200 hover:border-slate-300'
-                      }`}
+                      className={`px-3 py-1 rounded-full text-[11px] font-bold border transition cursor-pointer ${isSelected
+                        ? 'bg-[#FF5A1F] text-white border-[#FF5A1F]'
+                        : 'bg-slate-50 text-slate-600 border-slate-200 hover:border-slate-300'
+                        }`}
                     >
                       {f}
                     </button>
@@ -744,15 +492,23 @@ export function ProductsPage({ onNavigateCart, setCurrentPage }) {
 
           {/* RIGHT COLUMN: PRODUCTS GRID (9 cols) */}
           <div className="lg:col-span-9 space-y-6">
-            
-            {filteredProducts.length === 0 ? (
+
+            {loadingProducts ? (
+              <div className="bg-white rounded-3xl p-12 text-center border border-slate-200/80 shadow-xs space-y-4 max-w-lg mx-auto">
+                <div className="flex justify-center mb-4">
+                  <div className="w-10 h-10 border-4 border-orange-200 border-t-[#FF5A1F] rounded-full animate-spin"></div>
+                </div>
+                <h3 className="text-lg font-black text-slate-900">Loading Products...</h3>
+                <p className="text-slate-500 text-xs font-medium">Please wait while we fetch the latest catalog.</p>
+              </div>
+            ) : filteredProducts.length === 0 ? (
               <div className="bg-white rounded-3xl p-12 text-center border border-slate-200/80 shadow-xs space-y-4 max-w-lg mx-auto">
                 <div className="w-16 h-16 rounded-full bg-orange-50 text-[#FF5A1F] flex items-center justify-center mx-auto text-2xl">
                   <FiShoppingBag />
                 </div>
-                <h3 className="text-lg font-black text-slate-900">No SKUs Match Your Active Filters</h3>
+                <h3 className="text-lg font-black text-slate-900">No Products Listed</h3>
                 <p className="text-slate-500 text-xs font-medium">
-                  Try broadening your search criteria or resetting your active price range, orientation, or finish filters.
+                  There are currently no products matching your active filters.
                 </p>
                 <button
                   onClick={clearAllFilters}
@@ -774,7 +530,7 @@ export function ProductsPage({ onNavigateCart, setCurrentPage }) {
                     >
                       <div>
                         {/* Image Stage */}
-                        <div 
+                        <div
                           onClick={() => setSelectedProduct(prod)}
                           className="h-52 bg-slate-100 relative overflow-hidden cursor-pointer"
                         >
@@ -783,7 +539,7 @@ export function ProductsPage({ onNavigateCart, setCurrentPage }) {
                             alt={prod.title}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
                           />
-                          
+
                           {/* Price Tag Badge */}
                           <div className="absolute top-3 right-3 px-3 py-1 rounded-full bg-[#07152F]/90 backdrop-blur-xs text-white font-black text-xs border border-white/20">
                             From ₹{prod.basePrice || prod.price}
@@ -801,9 +557,8 @@ export function ProductsPage({ onNavigateCart, setCurrentPage }) {
                               e.stopPropagation();
                               toggleWishlist(prod);
                             }}
-                            className={`absolute bottom-3 right-3 w-9 h-9 rounded-full bg-white/90 backdrop-blur-xs shadow-md flex items-center justify-center transition border-none cursor-pointer hover:scale-110 ${
-                              isSaved ? 'text-rose-600' : 'text-slate-400 hover:text-rose-600'
-                            }`}
+                            className={`absolute bottom-3 right-3 w-9 h-9 rounded-full bg-white/90 backdrop-blur-xs shadow-md flex items-center justify-center transition border-none cursor-pointer hover:scale-110 ${isSaved ? 'text-rose-600' : 'text-slate-400 hover:text-rose-600'
+                              }`}
                             title="Add to Wishlist"
                           >
                             <FiHeart className={`w-4 h-4 ${isSaved ? 'fill-rose-600 text-rose-600' : ''}`} />
@@ -812,7 +567,7 @@ export function ProductsPage({ onNavigateCart, setCurrentPage }) {
 
                         {/* Product Info */}
                         <div className="p-5 space-y-2">
-                          <h3 
+                          <h3
                             onClick={() => setSelectedProduct(prod)}
                             className="font-black text-base text-[#0B1633] line-clamp-1 group-hover:text-[#FF5A1F] transition-colors cursor-pointer"
                           >

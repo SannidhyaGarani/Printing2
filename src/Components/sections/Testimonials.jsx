@@ -1,35 +1,45 @@
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { FiStar, FiArrowRight } from 'react-icons/fi'
+import { subscribeToHomepageTestimonials } from '../../services/firebase'
 
 export function Testimonials() {
-  const reviews = [
-    {
-      name: 'Rohan Mehta',
-      role: 'Founder, Event & Office',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200',
-      quote: 'Excellent quality and fast delivery. Visual Blink has become our go-to partner for all our branding needs.',
-      rating: 5,
-    },
-    {
-      name: 'Priya Sharma',
-      role: 'Event Planner',
-      avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&q=80&w=200',
-      quote: 'Amazing print quality and customer support. Highly recommended for small businesses!',
-      rating: 5,
-    },
-    {
-      name: 'Amit Verma',
-      role: 'Marketing Manager',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200',
-      quote: 'Easy ordering process and super fast delivery. The prints came out even better than expected.',
-      rating: 5,
-    },
-  ]
+  const [reviews, setReviews] = useState([])
+
+  useEffect(() => {
+    const unsub = subscribeToHomepageTestimonials((data) => {
+      setReviews(data && data.length > 0 ? data : [
+        {
+          name: 'Rohan Mehta',
+          role: 'Founder, Event & Office',
+          avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200',
+          quote: 'Excellent quality and fast delivery. Visual Blink has become our go-to partner for all our branding needs.',
+          rating: 5,
+        },
+        {
+          name: 'Priya Sharma',
+          role: 'Event Planner',
+          avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&q=80&w=200',
+          quote: 'Amazing print quality and customer support. Highly recommended for small businesses!',
+          rating: 5,
+        },
+        {
+          name: 'Amit Verma',
+          role: 'Marketing Manager',
+          avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200',
+          quote: 'Easy ordering process and super fast delivery. The prints came out even better than expected.',
+          rating: 5,
+        }
+      ]);
+    });
+    return () => unsub();
+  }, []);
+  // Render
 
   return (
     <section className="py-12 sm:py-16 bg-white font-sans border-b border-[#E2E8F0]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
+
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
           <div>

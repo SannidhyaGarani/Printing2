@@ -1,26 +1,30 @@
 import React, { useState } from 'react';
-import { 
-  Sparkles, 
-  Image as ImageIcon, 
-  Upload, 
-  Save, 
-  CheckCircle2, 
-  Grid, 
-  Plus, 
-  Trash2, 
-  Eye, 
-  Layers, 
-  Type, 
-  Star, 
+import {
+  Sparkles,
+  Image as ImageIcon,
+  Upload,
+  Save,
+  CheckCircle2,
+  Grid,
+  Plus,
+  Trash2,
+  Eye,
+  Layers,
+  Type,
+  Star,
   ArrowRight,
   RefreshCw
 } from 'lucide-react';
 import { useAdmin } from '../../context/AdminContext';
 import { uploadToCloudinary } from '../../../services/cloudinary';
+import { StatsManager } from './StatsManager';
+import { TestimonialsManager } from './TestimonialsManager';
+import { BlogsManager } from './BlogsManager';
+import { HomepageCategoriesManager } from './HomepageCategoriesManager';
 
 export const HomepageManager = () => {
   const { homepageSettings, updateHomepageSettings } = useAdmin();
-  
+
   const [formData, setFormData] = useState(homepageSettings || {});
   const [activeTab, setActiveTab] = useState('hero'); // 'hero', 'categories', 'preview'
   const [uploadingField, setUploadingField] = useState(null);
@@ -149,15 +153,14 @@ export const HomepageManager = () => {
       </div>
 
       {/* Tabs Navigation */}
-      <div className="bg-white p-2 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-2 overflow-x-auto">
+      <div className="bg-white p-2 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-2 overflow-x-auto whitespace-nowrap scrollbar-hide">
         <button
           type="button"
           onClick={() => setActiveTab('hero')}
-          className={`px-5 py-2.5 rounded-xl text-[14px] font-bold transition flex items-center gap-2 cursor-pointer border ${
-            activeTab === 'hero'
-              ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
-              : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-          }`}
+          className={`px-5 py-2.5 rounded-xl text-[14px] font-bold transition flex items-center gap-2 cursor-pointer border ${activeTab === 'hero'
+            ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+            : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+            }`}
         >
           <ImageIcon className="w-4 h-4" /> 1. Hero Banner Studio
         </button>
@@ -165,25 +168,56 @@ export const HomepageManager = () => {
         <button
           type="button"
           onClick={() => setActiveTab('categories')}
-          className={`px-5 py-2.5 rounded-xl text-[14px] font-bold transition flex items-center gap-2 cursor-pointer border ${
-            activeTab === 'categories'
-              ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
-              : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-          }`}
+          className={`px-5 py-2.5 rounded-xl text-[14px] font-bold transition flex items-center gap-2 cursor-pointer border shrink-0 ${activeTab === 'categories'
+            ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+            : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+            }`}
         >
-          <Grid className="w-4 h-4" /> 2. Category Section Studio ({formData.categoriesSection?.categories?.length || 0} Cards)
+          <Grid className="w-4 h-4" /> 2. Category Section Studio
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('stats')}
+          className={`px-5 py-2.5 rounded-xl text-[14px] font-bold transition flex items-center gap-2 cursor-pointer border shrink-0 ${activeTab === 'stats'
+            ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+            : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+            }`}
+        >
+          <Sparkles className="w-4 h-4" /> 3. Built for Business Stats
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('testimonials')}
+          className={`px-5 py-2.5 rounded-xl text-[14px] font-bold transition flex items-center gap-2 cursor-pointer border shrink-0 ${activeTab === 'testimonials'
+            ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+            : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+            }`}
+        >
+          <Star className="w-4 h-4" /> 4. Customer Testimonials
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('blogs')}
+          className={`px-5 py-2.5 rounded-xl text-[14px] font-bold transition flex items-center gap-2 cursor-pointer border shrink-0 ${activeTab === 'blogs'
+            ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+            : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+            }`}
+        >
+          <Type className="w-4 h-4" /> 5. Latest Blog Posts
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab('preview')}
-          className={`px-5 py-2.5 rounded-xl text-[14px] font-bold transition flex items-center gap-2 cursor-pointer border ${
-            activeTab === 'preview'
-              ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
-              : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-          }`}
+          className={`px-5 py-2.5 rounded-xl text-[14px] font-bold transition flex items-center gap-2 cursor-pointer border shrink-0 ${activeTab === 'preview'
+            ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+            : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+            }`}
         >
-          <Eye className="w-4 h-4" /> 3. Live Customer Storefront Preview
+          <Eye className="w-4 h-4" /> Live Customer Storefront Preview
         </button>
       </div>
 
@@ -437,110 +471,7 @@ export const HomepageManager = () => {
             </div>
           </div>
 
-          {/* Category Cards Grid & Cloudinary Image Uploaders */}
-          <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="font-extrabold text-sm text-slate-900 uppercase tracking-wider text-blue-600 flex items-center gap-2">
-                <Layers className="w-4 h-4" /> Category Grid Display Cards ({formData.categoriesSection?.categories?.length || 0})
-              </h3>
-              <button
-                type="button"
-                onClick={addCategoryCard}
-                className="px-4 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-600 font-extrabold text-[14px] flex items-center gap-1.5 border border-blue-200 cursor-pointer shadow-3xs"
-              >
-                <Plus className="w-4 h-4" /> Add New Category Card
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {(formData.categoriesSection?.categories || []).map((cat, idx) => (
-                <div key={cat.id || idx} className="p-4 rounded-2xl border border-slate-200 bg-slate-50/60 hover:bg-white hover:shadow-md transition space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-black uppercase text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100">
-                      Card #{idx + 1}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => removeCategoryCard(idx)}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 border-none bg-transparent cursor-pointer transition"
-                      title="Delete Category Card"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-
-                  <div className="flex gap-3">
-                    <div className="w-24 h-24 rounded-xl border border-slate-200 overflow-hidden bg-slate-200 shrink-0 relative group">
-                      <img src={cat.img} alt={cat.name} className="w-full h-full object-cover" />
-                      <label className="absolute inset-0 bg-slate-950/60 text-white flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition cursor-pointer text-[9px] font-bold p-1 text-center">
-                        <Upload className="w-4 h-4 mb-0.5" />
-                        {uploadingField === `catImage_${idx}` ? 'Uploading...' : 'Change Image'}
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => handleCatImageUpload(e, idx)}
-                          className="hidden"
-                        />
-                      </label>
-                    </div>
-
-                    <div className="flex-1 space-y-2 text-[14px]">
-                      <div>
-                        <label className="block font-bold text-slate-600 text-[10px] uppercase">Category Name</label>
-                        <input
-                          type="text"
-                          value={cat.name}
-                          onChange={(e) => {
-                            const newCats = [...formData.categoriesSection.categories];
-                            newCats[idx].name = e.target.value;
-                            setFormData({
-                              ...formData,
-                              categoriesSection: { ...formData.categoriesSection, categories: newCats }
-                            });
-                          }}
-                          className="w-full p-2 rounded-lg border border-slate-200 font-extrabold text-slate-900 bg-white focus:outline-none focus:border-blue-500"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block font-bold text-slate-600 text-[10px] uppercase">Subtitle Text</label>
-                        <input
-                          type="text"
-                          value={cat.sub}
-                          onChange={(e) => {
-                            const newCats = [...formData.categoriesSection.categories];
-                            newCats[idx].sub = e.target.value;
-                            setFormData({
-                              ...formData,
-                              categoriesSection: { ...formData.categoriesSection, categories: newCats }
-                            });
-                          }}
-                          className="w-full p-2 rounded-lg border border-slate-200 font-medium text-slate-700 bg-white focus:outline-none focus:border-blue-500"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block font-bold text-slate-600 text-[10px] uppercase mb-1">Image Cloudinary URL</label>
-                    <input
-                      type="text"
-                      value={cat.img}
-                      onChange={(e) => {
-                        const newCats = [...formData.categoriesSection.categories];
-                        newCats[idx].img = e.target.value;
-                        setFormData({
-                          ...formData,
-                          categoriesSection: { ...formData.categoriesSection, categories: newCats }
-                        });
-                      }}
-                      className="w-full p-2 rounded-lg border border-slate-200 font-mono text-[10px] text-slate-600 bg-white focus:outline-none focus:border-blue-500"
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          <HomepageCategoriesManager />
         </div>
       )}
 
@@ -619,6 +550,15 @@ export const HomepageManager = () => {
           </div>
         </div>
       )}
+
+      {/* TAB 4: STATS */}
+      {activeTab === 'stats' && <StatsManager />}
+
+      {/* TAB 5: TESTIMONIALS */}
+      {activeTab === 'testimonials' && <TestimonialsManager />}
+
+      {/* TAB 6: BLOGS */}
+      {activeTab === 'blogs' && <BlogsManager />}
 
     </div>
   );

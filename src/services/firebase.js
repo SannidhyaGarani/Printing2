@@ -1,22 +1,22 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { 
-  getFirestore, 
-  collection, 
-  onSnapshot, 
-  query, 
-  orderBy, 
-  doc, 
+import {
+  getFirestore,
+  collection,
+  onSnapshot,
+  query,
+  orderBy,
+  doc,
   setDoc,
   getDoc,
-  updateDoc, 
+  updateDoc,
   deleteDoc,
   addDoc,
-  serverTimestamp 
+  serverTimestamp
 } from 'firebase/firestore';
-import { 
-  getAuth, 
-  createUserWithEmailAndPassword, 
-  signInWithEmailAndPassword, 
+import {
+  getAuth,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
   updateProfile,
@@ -44,7 +44,7 @@ export const auth = getAuth(app);
 export const signUpUser = async (email, password, displayName, phone = '', company = '') => {
   const userCredential = await createUserWithEmailAndPassword(auth, email, password);
   const user = userCredential.user;
-  
+
   if (displayName) {
     await updateProfile(user, { displayName });
   }
@@ -205,7 +205,7 @@ export const getUserWishlistFromFirestore = async (userId) => {
 
 // ── User Profile & Address Book Firestore Helpers ──
 export const subscribeToUserProfile = (userId, onUpdate) => {
-  if (!userId) return () => {};
+  if (!userId) return () => { };
   try {
     const userRef = doc(db, 'users', userId);
     return onSnapshot(userRef, (docSnap) => {
@@ -216,7 +216,7 @@ export const subscribeToUserProfile = (userId, onUpdate) => {
       console.warn("User profile listener note:", err.message);
     });
   } catch (err) {
-    return () => {};
+    return () => { };
   }
 };
 
@@ -240,8 +240,8 @@ export const subscribeToUserOrders = (userId, userEmail, onUpdate) => {
     const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
     return onSnapshot(q, (snapshot) => {
       const allOrders = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-      const userOrders = allOrders.filter(o => 
-        (userId && o.userId === userId) || 
+      const userOrders = allOrders.filter(o =>
+        (userId && o.userId === userId) ||
         (userEmail && o.customer?.email?.toLowerCase() === userEmail.toLowerCase())
       );
       onUpdate(userOrders);
@@ -251,18 +251,18 @@ export const subscribeToUserOrders = (userId, userEmail, onUpdate) => {
     });
   } catch (err) {
     onUpdate([]);
-    return () => {};
+    return () => { };
   }
 };
 
 export const subscribeToOrderById = (orderId, onUpdate) => {
-  if (!orderId) return () => {};
+  if (!orderId) return () => { };
   try {
     const q = query(collection(db, 'orders'));
     return onSnapshot(q, (snapshot) => {
       const allOrders = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
       const cleanTarget = orderId.toLowerCase().trim();
-      const matched = allOrders.find(o => 
+      const matched = allOrders.find(o =>
         (o.orderId && o.orderId.toLowerCase() === cleanTarget) ||
         (o.id && o.id.toLowerCase() === cleanTarget)
       );
@@ -273,7 +273,7 @@ export const subscribeToOrderById = (orderId, onUpdate) => {
     });
   } catch (err) {
     onUpdate(null);
-    return () => {};
+    return () => { };
   }
 };
 
@@ -292,7 +292,7 @@ export const subscribeToOrders = (onUpdate, onError) => {
     });
   } catch (err) {
     console.warn("Firebase listener fallback active.");
-    return () => {};
+    return () => { };
   }
 };
 
@@ -306,7 +306,7 @@ export const subscribeToProducts = (onUpdate) => {
       console.warn("Firestore products subscription note:", err.message);
     });
   } catch (err) {
-    return () => {};
+    return () => { };
   }
 };
 
@@ -320,7 +320,7 @@ export const subscribeToDesignRequests = (onUpdate) => {
       console.warn("Firestore design requests subscription note:", err.message);
     });
   } catch (err) {
-    return () => {};
+    return () => { };
   }
 };
 
@@ -571,8 +571,8 @@ export const DEFAULT_CATALOG_OPTIONS = {
     { name: 'Custom Branded Sleeve Outer Packaging', priceModifier: 2.0 }
   ],
   customAreaPricing: [
-   
-   
+
+
   ]
 };
 
@@ -600,7 +600,7 @@ export const subscribeToHomepageSettings = (onUpdate) => {
         const firestoreData = docSnap.data();
         try {
           localStorage.setItem(HOMEPAGE_SETTINGS_KEY, JSON.stringify(firestoreData));
-        } catch (e) {}
+        } catch (e) { }
         onUpdate(firestoreData);
       } else {
         onUpdate(getLocal());
@@ -611,7 +611,135 @@ export const subscribeToHomepageSettings = (onUpdate) => {
     });
   } catch (err) {
     onUpdate(getLocal());
-    return () => {};
+    return () => { };
+  }
+};
+
+export const subscribeToHomepageCategories = (onUpdate) => {
+  try {
+    const q = query(collection(db, 'homepage_categories'));
+    return onSnapshot(q, (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+      onUpdate(data);
+    }, () => onUpdate([]));
+  } catch (err) {
+    onUpdate([]);
+    return () => { };
+  }
+};
+
+export const saveHomepageCategory = async (data) => {
+  try {
+    const id = data.id || Date.now().toString();
+    await setDoc(doc(db, 'homepage_categories', id), { ...data, updatedAt: serverTimestamp() }, { merge: true });
+    return true;
+  } catch (err) {
+    return false;
+  }
+};
+
+export const deleteHomepageCategory = async (id) => {
+  try {
+    await deleteDoc(doc(db, 'homepage_categories', id));
+    return true;
+  } catch (err) {
+    return false;
+  }
+};
+
+export const subscribeToHomepageStats = (onUpdate) => {
+  try {
+    const q = query(collection(db, 'homepage_stats'));
+    return onSnapshot(q, (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+      onUpdate(data);
+    }, () => onUpdate([]));
+  } catch (err) {
+    onUpdate([]);
+    return () => { };
+  }
+};
+
+export const saveHomepageStat = async (data) => {
+  try {
+    const id = data.id || Date.now().toString();
+    await setDoc(doc(db, 'homepage_stats', id), { ...data, updatedAt: serverTimestamp() }, { merge: true });
+    return true;
+  } catch (err) {
+    return false;
+  }
+};
+
+export const deleteHomepageStat = async (id) => {
+  try {
+    await deleteDoc(doc(db, 'homepage_stats', id));
+    return true;
+  } catch (err) {
+    return false;
+  }
+};
+
+export const subscribeToHomepageTestimonials = (onUpdate) => {
+  try {
+    const q = query(collection(db, 'homepage_testimonials'));
+    return onSnapshot(q, (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+      onUpdate(data);
+    }, () => onUpdate([]));
+  } catch (err) {
+    onUpdate([]);
+    return () => { };
+  }
+};
+
+export const saveHomepageTestimonial = async (data) => {
+  try {
+    const id = data.id || Date.now().toString();
+    await setDoc(doc(db, 'homepage_testimonials', id), { ...data, updatedAt: serverTimestamp() }, { merge: true });
+    return true;
+  } catch (err) {
+    return false;
+  }
+};
+
+export const deleteHomepageTestimonial = async (id) => {
+  try {
+    await deleteDoc(doc(db, 'homepage_testimonials', id));
+    return true;
+  } catch (err) {
+    return false;
+  }
+};
+
+export const subscribeToHomepageBlogs = (onUpdate) => {
+  try {
+    const q = query(collection(db, 'homepage_blogs'));
+    return onSnapshot(q, (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+      onUpdate(data);
+    }, () => onUpdate([]));
+  } catch (err) {
+    onUpdate([]);
+    return () => { };
+  }
+};
+
+export const saveHomepageBlog = async (data) => {
+  try {
+    const id = data.id || Date.now().toString();
+    await setDoc(doc(db, 'homepage_blogs', id), { ...data, updatedAt: serverTimestamp() }, { merge: true });
+    return true;
+  } catch (err) {
+    return false;
+  }
+};
+
+export const deleteHomepageBlog = async (id) => {
+  try {
+    await deleteDoc(doc(db, 'homepage_blogs', id));
+    return true;
+  } catch (err) {
+    return false;
   }
 };
 
@@ -619,7 +747,7 @@ export const saveHomepageSettingsToFirestore = async (settingsData) => {
   try {
     localStorage.setItem(HOMEPAGE_SETTINGS_KEY, JSON.stringify(settingsData));
     window.dispatchEvent(new Event('homepage_settings_updated'));
-  } catch (e) {}
+  } catch (e) { }
 
   try {
     const docRef = doc(db, 'site_settings', 'homepage');
@@ -653,7 +781,7 @@ export const subscribeToCatalogOptions = (onUpdate) => {
         const firestoreData = docSnap.data();
         try {
           localStorage.setItem(CATALOG_OPTIONS_KEY, JSON.stringify(firestoreData));
-        } catch (e) {}
+        } catch (e) { }
         onUpdate(firestoreData);
       } else {
         onUpdate(getLocal());
@@ -664,7 +792,7 @@ export const subscribeToCatalogOptions = (onUpdate) => {
     });
   } catch (err) {
     onUpdate(getLocal());
-    return () => {};
+    return () => { };
   }
 };
 
@@ -672,7 +800,7 @@ export const saveCatalogOptionsToFirestore = async (optionsData) => {
   try {
     localStorage.setItem(CATALOG_OPTIONS_KEY, JSON.stringify(optionsData));
     window.dispatchEvent(new Event('catalog_options_updated'));
-  } catch (e) {}
+  } catch (e) { }
 
   try {
     const docRef = doc(db, 'site_settings', 'catalog_options');
@@ -801,7 +929,7 @@ export const subscribeToMegamenuCategories = (onUpdate) => {
         const dataArr = Array.isArray(firestoreData) ? firestoreData : DEFAULT_MEGAMENU_CATEGORIES;
         try {
           localStorage.setItem(MEGAMENU_CATEGORIES_KEY, JSON.stringify(dataArr));
-        } catch (e) {}
+        } catch (e) { }
         onUpdate(dataArr);
       } else {
         onUpdate(getLocal());
@@ -812,7 +940,7 @@ export const subscribeToMegamenuCategories = (onUpdate) => {
     });
   } catch (err) {
     onUpdate(getLocal());
-    return () => {};
+    return () => { };
   }
 };
 
@@ -820,7 +948,7 @@ export const saveMegamenuCategoriesToFirestore = async (categoriesData) => {
   try {
     localStorage.setItem(MEGAMENU_CATEGORIES_KEY, JSON.stringify(categoriesData));
     window.dispatchEvent(new Event('megamenu_categories_updated'));
-  } catch (e) {}
+  } catch (e) { }
 
   try {
     const docRef = doc(db, 'site_settings', 'megamenu_categories');

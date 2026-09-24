@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { animate, useInView } from 'framer-motion'
+import { subscribeToHomepageStats } from '../../services/firebase'
 
 function CounterNumber({ value, suffix = '', decimals = 0 }) {
   const ref = useRef(null)
@@ -30,12 +31,19 @@ function CounterNumber({ value, suffix = '', decimals = 0 }) {
 }
 
 export function StatsBanner() {
-  const statsList = [
-    { value: 50000, suffix: '+', label: 'Happy Customers' },
-    { value: 100000, suffix: '+', label: 'Orders Completed' },
-    { value: 500, suffix: '+', label: 'Premium Products' },
-    { value: 99.9, decimals: 1, suffix: '%', label: 'Customer Satisfaction' },
-  ]
+  const [statsList, setStatsList] = useState([]);
+
+  useEffect(() => {
+    const unsub = subscribeToHomepageStats((data) => {
+      setStatsList(data && data.length > 0 ? data.sort((a, b) => a.value - b.value) : [
+        { value: 50000, suffix: '+', label: 'Happy Customers' },
+        { value: 100000, suffix: '+', label: 'Orders Completed' },
+        { value: 500, suffix: '+', label: 'Premium Products' },
+        { value: 99.9, decimals: 1, suffix: '%', label: 'Customer Satisfaction' },
+      ]);
+    });
+    return () => unsub();
+  }, []);
 
   return (
     <section className="py-12 sm:py-16 bg-[#07152F] text-white font-sans border-y border-slate-800">
@@ -44,9 +52,8 @@ export function StatsBanner() {
           {statsList.map((st, i) => (
             <div
               key={st.label}
-              className={`flex flex-col items-center text-center ${
-                i !== 0 ? 'pt-4 sm:pt-0 sm:pl-6' : ''
-              }`}
+              className={`flex flex-col items-center text-center ${i !== 0 ? 'pt-4 sm:pt-0 sm:pl-6' : ''
+                }`}
             >
               <div className="text-3xl sm:text-4xl lg:text-[44px] font-black text-white leading-none tracking-tight mb-2">
                 <CounterNumber value={st.value} suffix={st.suffix} decimals={st.decimals || 0} />

@@ -1,21 +1,21 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  LayoutDashboard, 
-  Kanban, 
-  Palette, 
-  Package, 
+import {
+  LayoutDashboard,
+  Kanban,
+  Palette,
+  Package,
   Layers,
   Grid,
   Sparkles,
-  Calculator, 
-  Image as ImageIcon, 
-  Users, 
-  Truck, 
-  ShieldCheck, 
-  ChevronLeft, 
-  ChevronRight, 
-  Printer, 
+  Calculator,
+  Image as ImageIcon,
+  Users,
+  Truck,
+  ShieldCheck,
+  ChevronLeft,
+  ChevronRight,
+  Printer,
   UserCheck,
   ArrowLeftRight,
   X
@@ -23,10 +23,10 @@ import {
 import { useAdmin } from '../../context/AdminContext';
 
 export const AdminSidebar = ({ onSwitchToWebsite, isMobileOpen, onCloseMobileSidebar }) => {
-  const { 
-    activeTab, 
-    setActiveTab, 
-    sidebarCollapsed, 
+  const {
+    activeTab,
+    setActiveTab,
+    sidebarCollapsed,
     setSidebarCollapsed,
     userRole,
     setUserRole,
@@ -39,28 +39,30 @@ export const AdminSidebar = ({ onSwitchToWebsite, isMobileOpen, onCloseMobileSid
       group: "Operations",
       items: [
         { id: 'dashboard', label: 'Dashboard Overview', icon: LayoutDashboard },
-        { 
-          id: 'orders', 
-          label: 'Orders & Production', 
-          icon: Kanban, 
+        {
+          id: 'orders',
+          label: 'Orders & Production',
+          icon: Kanban,
           badge: expressOrdersCount > 0 ? `${expressOrdersCount} Express` : null,
           badgeColor: 'bg-red-500 text-white animate-pulse'
         },
-        { 
-          id: 'design_desk', 
-          label: 'Custom Design Desk', 
-          icon: Palette, 
-          badge: pendingArtworkCount > 0 ? `${pendingArtworkCount} Pending` : null,
-          badgeColor: 'bg-amber-500 text-white'
-        },
+        // Hiding Dedicated Design Assistance Hub per architecture consolidation
+        // { 
+        //   id: 'design_desk', 
+        //   label: 'Custom Design Desk', 
+        //   icon: Palette, 
+        //   badge: pendingArtworkCount > 0 ? `${pendingArtworkCount} Pending` : null,
+        //   badgeColor: 'bg-amber-500 text-white'
+        // },
       ]
     },
     {
       group: "Catalog & Pricing",
       items: [
         { id: 'catalog', label: 'Product Catalog', icon: Package },
-        { id: 'category_manager', label: 'Category & Subcategory Mgr', icon: Grid, badge: 'Live', badgeColor: 'bg-emerald-600 text-white' },
-        { id: 'print_matrix', label: 'Options & Finishes Matrix', icon: Layers, badge: 'Global', badgeColor: 'bg-blue-600 text-white' },
+        // Hiding legacy pages
+        // { id: 'category_manager', label: 'Category & Subcategory Mgr', icon: Grid, badge: 'Live', badgeColor: 'bg-emerald-600 text-white' },
+        // { id: 'print_matrix', label: 'Options & Finishes Matrix', icon: Layers, badge: 'Global', badgeColor: 'bg-blue-600 text-white' },
         { id: 'homepage_customizer', label: 'Homepage Studio', icon: Sparkles, badge: 'Live', badgeColor: 'bg-gradient-to-r from-[#FF5A1F] to-amber-500 text-white' },
         { id: 'pricing', label: 'Pricing & GST Engine', icon: Calculator },
         { id: 'cloudinary', label: 'Cloudinary Asset Hub', icon: ImageIcon },
@@ -128,7 +130,7 @@ export const AdminSidebar = ({ onSwitchToWebsite, isMobileOpen, onCloseMobileSid
             <UserCheck className="w-3.5 h-3.5 text-emerald-600" />
             <span className="font-medium text-slate-500 text-[14px]">Role:</span>
           </div>
-          <select 
+          <select
             value={userRole}
             onChange={(e) => setUserRole(e.target.value)}
             className="bg-white border border-slate-200 rounded px-2 py-0.5 text-[14px] text-blue-600 font-bold focus:outline-none focus:border-blue-500 cursor-pointer shadow-3xs"
@@ -156,15 +158,14 @@ export const AdminSidebar = ({ onSwitchToWebsite, isMobileOpen, onCloseMobileSid
                 <button
                   key={item.id}
                   onClick={() => handleSelectTab(item.id)}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[14px] font-semibold transition-all group relative cursor-pointer ${
-                    isActive 
-                      ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25' 
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                  }`}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[14px] font-semibold transition-all group relative cursor-pointer ${isActive
+                    ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                    }`}
                   title={sidebarCollapsed && !isMobileOpen ? item.label : undefined}
                 >
                   <Icon className={`w-4 h-4 shrink-0 transition-colors ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-blue-600'}`} />
-                  
+
                   {(!sidebarCollapsed || isMobileOpen) && (
                     <span className="truncate flex-1 text-left">{item.label}</span>
                   )}
